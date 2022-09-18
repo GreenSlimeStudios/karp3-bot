@@ -1,21 +1,58 @@
 // use std::env;
+use std::fs::OpenOptions;
+use std::io::Write;
 
+use chrono;
 use rand::Rng;
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{CommandResult, StandardFramework};
+// use serenity::futures::TryFutureExt;
 // use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, sussy)]
+#[commands(ping, dekarpdelaspecial)]
 struct General;
 
 struct Handler;
 
 #[async_trait]
-impl EventHandler for Handler {}
+impl EventHandler for Handler {
+    async fn message(&self, ctx: Context, msg: Message) {
+        // We are verifying if the bot id is the same as the message author id.
+        if msg.author.id != ctx.cache.current_user_id() {
+            println!(
+                "{} {}, {} - {}: {:?}",
+                chrono::offset::Local::now(),
+                msg.channel(&ctx).await.unwrap(),
+                msg.author,
+                msg.author_nick(&ctx).await.unwrap(),
+                msg.content
+            );
+
+            let mut file = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open("logs.txt")
+                .unwrap();
+
+            if let Err(e) = writeln!(
+                file,
+                "{} {}, {} - {}: {:?}",
+                chrono::offset::Local::now(),
+                msg.channel(&ctx).await.unwrap(),
+                msg.author,
+                msg.author_nick(&ctx).await.unwrap(),
+                msg.content
+            ) {
+                eprintln!("Couldn't write to file: {}", e);
+            }
+        }
+    }
+    // Since data is located in Context, this means you are also able to use it within events!
+}
 
 #[tokio::main]
 async fn main() {
@@ -49,7 +86,7 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn sussy(ctx: &Context, msg: &Message) -> CommandResult {
+async fn dekarpdelaspecial(ctx: &Context, msg: &Message) -> CommandResult {
     println!("baka");
     msg.channel_id
         .send_message(&ctx, |m| m.content("baka"))
