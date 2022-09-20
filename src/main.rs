@@ -180,6 +180,34 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
     println!("{:?}", numbers);
     println!("{:?}", operators);
 
+    while operators.contains(&"*") {
+        let mut index: usize = 0;
+        for i in 0..operators.len() {
+            if operators[i] == "*" {
+                index = i;
+                break;
+            }
+        }
+        let num: f32 = numbers[index] * numbers[index + 1];
+        numbers.remove(index + 1);
+        numbers[index] = num;
+        operators.remove(index);
+    }
+
+    while operators.contains(&"/") {
+        let mut index: usize = 0;
+        for i in 0..operators.len() {
+            if operators[i] == "*" {
+                index = i;
+                break;
+            }
+        }
+        let num: f32 = numbers[index] / numbers[index + 1];
+        numbers.remove(index + 1);
+        numbers[index] = num;
+        operators.remove(index);
+    }
+
     for i in 0..numbers.len() {
         if i == 0 {
             result = numbers[0];
