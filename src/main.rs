@@ -180,33 +180,72 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
     println!("{:?}", numbers);
     println!("{:?}", operators);
 
-    while operators.contains(&"*") {
+    while operators.contains(&"*") || operators.contains(&"/") {
         let mut index: usize = 0;
+        let mut index_m: usize = 1000;
+        let mut index_d: usize = 1000;
+        let mut is_div: bool = true;
         for i in 0..operators.len() {
             if operators[i] == "*" {
-                index = i;
+                index_m = i;
                 break;
             }
         }
-        let num: f32 = numbers[index] * numbers[index + 1];
+        for i in 0..operators.len() {
+            if operators[i] == "/" {
+                index_d = i;
+                break;
+            }
+        }
+        if index_d < index_m {
+            index = index_d;
+            is_div = true;
+        } else {
+            index = index_m;
+            is_div = false;
+        }
+
+        let num: f32 = if is_div {
+            numbers[index] / numbers[index + 1]
+        } else {
+            numbers[index] * numbers[index + 1]
+        };
+
+        let message: String = if is_div { "dividing " } else { "multiplying " }.to_string()
+            + numbers[index].to_string().as_str()
+            + " by "
+            + numbers[index + 1].to_string().as_str();
+        msg.channel_id
+            .send_message(&ctx, |m| m.content(message))
+            .await?;
+
         numbers.remove(index + 1);
         numbers[index] = num;
         operators.remove(index);
     }
 
-    while operators.contains(&"/") {
-        let mut index: usize = 0;
-        for i in 0..operators.len() {
-            if operators[i] == "*" {
-                index = i;
-                break;
-            }
-        }
-        let num: f32 = numbers[index] / numbers[index + 1];
-        numbers.remove(index + 1);
-        numbers[index] = num;
-        operators.remove(index);
-    }
+    // while operators.contains(&"/") {
+    //     let mut index: usize = 0;
+    //     for i in 0..operators.len() {
+    //         if operators[i] == "/" {
+    //             index = i;
+    //             break;
+    //         }
+    //     }
+    //     let num: f32 = numbers[index] / numbers[index + 1];
+
+    //     let message: String = "dividing ".to_string()
+    //         + numbers[index].to_string().as_str()
+    //         + " by "
+    //         + numbers[index + 1].to_string().as_str();
+    //     msg.channel_id
+    //         .send_message(&ctx, |m| m.content(message))
+    //         .await?;
+
+    //     numbers.remove(index + 1);
+    //     numbers[index] = num;
+    //     operators.remove(index);
+    // }
 
     for i in 0..numbers.len() {
         if i == 0 {
