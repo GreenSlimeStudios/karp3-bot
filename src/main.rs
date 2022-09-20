@@ -1,3 +1,4 @@
+use async_recursion::async_recursion;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::result;
@@ -143,7 +144,74 @@ async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
     let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
+
+    let mut result: f32 = 0.0;
+    match calculate_section(&msg, &ctx, &args).await {
+        Some(v) => {
+            result = v;
+        }
+        None => {
+            msg.channel_id
+                .send_message(&ctx, |m| m.content("error running calculation"))
+                .await?;
+        }
+    }
+
+    // msg.channel_id
+    //     .send_message(&ctx, |m| m.content(result.to_string()))
+    //     .await?;
+    msg.reply(&ctx, result.to_string()).await?;
+    Ok(())
+}
+
+#[async_recursion]
+async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>) -> Option<f32> {
+    let mut args: Vec<&str> = suply_args.clone();
     println!("{:?}", args);
+    while args.contains(&"(") {
+        let mut index_open: usize = 0;
+        let mut open_counter: usize = 0;
+        let mut close_counter: usize = 0;
+        let mut index_close: usize = 0;
+        for i in 0..args.len() {
+            if args[i] == "(" {
+                open_counter += 1;
+                if open_counter == 1 {
+                    index_open = i;
+                }
+            }
+            if args[i] == ")" {
+                close_counter += 1;
+                if close_counter == open_counter {
+                    index_close = i;
+                    break;
+                }
+            }
+        }
+        println!("open index at position: {}", index_open);
+        println!("close index at position: {}", index_close);
+
+        let mut new_args: Vec<&str> = args.clone().into_iter().skip(index_open + 1).collect();
+        for _i in 0..(args.len() - index_close) {
+            new_args.pop();
+        }
+        println!("new args: {:?}", new_args);
+        let mut prentecies_result: f32 = 0.0;
+        match calculate_section(&msg, &ctx, &new_args).await {
+            Some(v) => {
+                prentecies_result = v;
+            }
+            None => (),
+        };
+        let num: String = prentecies_result.clone().to_string();
+        // args[index_open] = &num.as_str();
+        args[index_open] = &"1";
+        println!("args before () deletion: {:?}", args);
+        for _i in 0..index_close - index_open {
+            args.remove(index_open + 1);
+        }
+        println!("args after () deletion: {:?}", args);
+    }
 
     let mut result: f32 = 0.0;
     let mut numbers: Vec<f32> = Vec::new();
@@ -160,8 +228,8 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
                 Err(e) => {
                     msg.channel_id
                         .send_message(&ctx, |m| m.content(e.to_string()))
-                        .await?;
-                    return Ok(());
+                        .await;
+                    return None;
                 }
             },
         }
@@ -174,16 +242,17 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
     if numbers.len() != operators.len() + 1 {
         msg.channel_id
             .send_message(&ctx, |m| m.content("invalid syntax"))
-            .await?;
-        return Ok(());
+            .await;
+
+        return None;
     }
-    println!("{:?}", numbers);
-    println!("{:?}", operators);
+    // println!("{:?}", numbers);
+    // println!("{:?}", operators);
 
     while operators.contains(&"*") || operators.contains(&"/") {
         let mut index: usize = 0;
-        let mut index_m: usize = 1000;
-        let mut index_d: usize = 1000;
+        let mut index_m: usize = 10000;
+        let mut index_d: usize = 10000;
         let mut is_div: bool = true;
         for i in 0..operators.len() {
             if operators[i] == "*" {
@@ -217,52 +286,44 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
             + numbers[index + 1].to_string().as_str();
         msg.channel_id
             .send_message(&ctx, |m| m.content(message))
-            .await?;
+            .await;
 
         numbers.remove(index + 1);
         numbers[index] = num;
         operators.remove(index);
     }
 
-    // while operators.contains(&"/") {
-    //     let mut index: usize = 0;
-    //     for i in 0..operators.len() {
-    //         if operators[i] == "/" {
-    //             index = i;
-    //             break;
-    //         }
-    //     }
-    //     let num: f32 = numbers[index] / numbers[index + 1];
-
-    //     let message: String = "dividing ".to_string()
-    //         + numbers[index].to_string().as_str()
-    //         + " by "
-    //         + numbers[index + 1].to_string().as_str();
-    //     msg.channel_id
-    //         .send_message(&ctx, |m| m.content(message))
-    //         .await?;
-
-    //     numbers.remove(index + 1);
-    //     numbers[index] = num;
-    //     operators.remove(index);
-    // }
-
     for i in 0..numbers.len() {
         if i == 0 {
             result = numbers[0];
             continue;
         }
-        result = match operators[i - 1] {
-            "*" => result * numbers[i],
-            "+" => result + numbers[i],
-            "-" => result - numbers[i],
-            "/" => result / numbers[i],
-            _ => result,
+        match operators[i - 1] {
+            "-" => {
+                let message: String = "substracting ".to_string()
+                    + numbers[i].to_string().as_str()
+                    + " from "
+                    + result.to_string().as_str();
+                msg.channel_id
+                    .send_message(&ctx, |m| m.content(message))
+                    .await;
+                result = result - numbers[i];
+            }
+            "+" => {
+                let message: String = "adding ".to_string()
+                    + numbers[i].to_string().as_str()
+                    + " to "
+                    + result.to_string().as_str();
+                msg.channel_id
+                    .send_message(&ctx, |m| m.content(message))
+                    .await;
+                result = result + numbers[i];
+            }
+            _ => {
+                result = result;
+            }
         }
     }
-    msg.channel_id
-        .send_message(&ctx, |m| m.content(result.to_string()))
-        .await?;
 
-    Ok(())
+    Some(result)
 }
