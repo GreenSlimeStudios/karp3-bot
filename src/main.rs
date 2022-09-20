@@ -1,7 +1,6 @@
-use std::fmt::Debug;
-// use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::result;
 
 use chrono;
 use rand::Rng;
@@ -14,7 +13,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, dekarpdelaspecial, meme)]
+#[commands(ping, dekarpdelaspecial, meme, calculate)]
 struct General;
 
 struct Handler;
@@ -23,47 +22,48 @@ struct Handler;
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
         // We are verifying if the bot id is the same as the message author id.
+        let mut nick: String = "karp3".to_string();
         if msg.author.id != ctx.cache.current_user_id() {
-            // Some lang actions
-            let nick: String = match msg.author_nick(&ctx).await {
+            nick = match msg.author_nick(&ctx).await {
                 Some(v) => v,
                 None => {
                     println!("error reading nickname");
                     "error".to_string()
                 }
             };
-            // let channel_id = match msg.channel(&ctx).await {
-            //     Some(v) => v,
-            //     None => {
-            //         println!("error reading channel");
-            //         "error".to_string()
-            //     }
-            // };
-            println!(
-                "{} {}, {} - {}: {:?}",
-                chrono::offset::Local::now(),
-                msg.channel(&ctx).await.unwrap(),
-                msg.author,
-                nick,
-                msg.content
-            );
-            let mut file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open("logs.txt")
-                .unwrap();
+            // Some lang actions
+        }
+        // let channel_id = match msg.channel(&ctx).await {
+        //     Some(v) => v,
+        //     None => {
+        //         println!("error reading channel");
+        //         "error".to_string()
+        //     }
+        // };
+        println!(
+            "{} {}, {} - {}: {:?}",
+            chrono::offset::Local::now(),
+            msg.channel(&ctx).await.unwrap(),
+            msg.author,
+            nick,
+            msg.content
+        );
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open("logs.txt")
+            .unwrap();
 
-            if let Err(e) = writeln!(
-                file,
-                "{} {}, {} - {}: {:?}",
-                chrono::offset::Local::now(),
-                msg.channel(&ctx).await.unwrap(),
-                msg.author,
-                nick,
-                msg.content
-            ) {
-                eprintln!("Couldn't write to file: {}", e);
-            }
+        if let Err(e) = writeln!(
+            file,
+            "{} {}, {} - {}: {:?}",
+            chrono::offset::Local::now(),
+            msg.channel(&ctx).await.unwrap(),
+            msg.author,
+            nick,
+            msg.content
+        ) {
+            eprintln!("Couldn't write to file: {}", e);
         }
     }
     // Since data is located in Context, this means you are also able to use it within events!
@@ -129,11 +129,73 @@ async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
         .unwrap();
     // .text()?;
     let urls: Vec<&str> = resp.split("https://").collect();
-    let mut url = "https://".to_string() + urls[urls.len() - 2];
+    let url_2: Vec<&str> = urls[urls.len() - 2].split("%").collect();
+    let url_3: Vec<&str> = url_2[0].split("%").collect();
+
+    let mut url = "https://".to_string() + url_3[0];
     url = url.replace("\",\"", "");
     // url = url.replace("%..", "");
     msg.reply(&ctx, &url).await?;
-    println!("reply: {}", &url);
+    // println!("reply: {}", &url);
+
+    Ok(())
+}
+#[command]
+async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
+    let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    println!("{:?}", args);
+
+    let mut result: f32 = 0.0;
+    let mut numbers: Vec<f32> = Vec::new();
+    let mut operators: Vec<&str> = Vec::new();
+
+    for i in 0..args.len() {
+        match args[i] {
+            "*" => operators.push(args[i]),
+            "+" => operators.push(args[i]),
+            "-" => operators.push(args[i]),
+            "/" => operators.push(args[i]),
+            _ => match args[i].parse::<f32>() {
+                Ok(v) => numbers.push(v),
+                Err(e) => {
+                    msg.channel_id
+                        .send_message(&ctx, |m| m.content(e.to_string()))
+                        .await?;
+                    return Ok(());
+                }
+            },
+        }
+    }
+
+    // msg.channel_id
+    //     .send_message(&ctx, |m| m.content(numbers[0]))
+    //     .await?;
+
+    if numbers.len() != operators.len() + 1 {
+        msg.channel_id
+            .send_message(&ctx, |m| m.content("invalid syntax"))
+            .await?;
+        return Ok(());
+    }
+    println!("{:?}", numbers);
+    println!("{:?}", operators);
+
+    for i in 0..numbers.len() {
+        if i == 0 {
+            result = numbers[0];
+            continue;
+        }
+        result = match operators[i - 1] {
+            "*" => result * numbers[i],
+            "+" => result + numbers[i],
+            "-" => result - numbers[i],
+            "/" => result / numbers[i],
+            _ => result,
+        }
+    }
+    msg.channel_id
+        .send_message(&ctx, |m| m.content(result.to_string()))
+        .await?;
 
     Ok(())
 }
