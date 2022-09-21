@@ -1,7 +1,6 @@
 use async_recursion::async_recursion;
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::result;
 
 use chrono;
 use rand::Rng;
@@ -143,7 +142,12 @@ async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
 }
 #[command]
 async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
-    let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    let args: Vec<String> = msg
+        .content
+        .split(" ")
+        .skip(1)
+        .map(|f| f.to_string())
+        .collect();
 
     let mut result: f32 = 0.0;
     match calculate_section(&msg, &ctx, &args).await {
@@ -165,10 +169,11 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[async_recursion]
-async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>) -> Option<f32> {
-    let mut args: Vec<&str> = suply_args.clone();
+async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String>) -> Option<f32> {
+    let mut args: Vec<String> = suply_args.into_iter().map(|f| f.to_string()).collect();
+    let mut result_f: f32 = 0.0;
     println!("{:?}", args);
-    while args.contains(&"(") {
+    while args.contains(&"(".to_string()) {
         let mut index_open: usize = 0;
         let mut open_counter: usize = 0;
         let mut close_counter: usize = 0;
@@ -188,69 +193,74 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>)
                 }
             }
         }
-        println!("open index at position: {}", index_open);
-        println!("close index at position: {}", index_close);
+        // println!("open index at position: {}", index_open);
+        // println!("close index at position: {}", index_close);
 
-        let mut new_args: Vec<&str> = args.clone().into_iter().skip(index_open + 1).collect();
+        let mut new_args: Vec<String> = args.clone().into_iter().skip(index_open + 1).collect();
         for _i in 0..(args.len() - index_close) {
             new_args.pop();
         }
-        println!("new args: {:?}", new_args);
-        let mut prentecies_result: f32 = 0.0;
+        // println!("new args: {:?}", new_args);
         match calculate_section(&msg, &ctx, &new_args).await {
             Some(v) => {
-                prentecies_result = v;
+                result_f = v;
             }
             None => (),
         };
-        let num: String = prentecies_result.clone().to_string();
-        // args[index_open] = &num.as_str();
-        args[index_open] = &"1";
-        println!("args before () deletion: {:?}", args);
+        args[index_open] = result_f.to_string();
+
+        // println!("args before () deletion: {:?}", args);
         for _i in 0..index_close - index_open {
             args.remove(index_open + 1);
         }
-        println!("args after () deletion: {:?}", args);
+        // println!("args after () deletion: {:?}", args);
     }
 
     let mut result: f32 = 0.0;
     let mut numbers: Vec<f32> = Vec::new();
-    let mut operators: Vec<&str> = Vec::new();
+    let mut operators: Vec<String> = Vec::new();
 
     for i in 0..args.len() {
-        match args[i] {
-            "*" => operators.push(args[i]),
-            "+" => operators.push(args[i]),
-            "-" => operators.push(args[i]),
-            "/" => operators.push(args[i]),
+        match args[i].as_str() {
+            "*" => operators.push(args[i].clone()),
+            "+" => operators.push(args[i].clone()),
+            "-" => operators.push(args[i].clone()),
+            "/" => operators.push(args[i].clone()),
             _ => match args[i].parse::<f32>() {
                 Ok(v) => numbers.push(v),
                 Err(e) => {
-                    msg.channel_id
+                    match msg
+                        .channel_id
                         .send_message(&ctx, |m| m.content(e.to_string()))
-                        .await;
+                        .await
+                    {
+                        Ok(_v) => (),
+                        Err(e) => println!("error: {}", e),
+                    }
+
                     return None;
                 }
             },
         }
     }
 
-    // msg.channel_id
-    //     .send_message(&ctx, |m| m.content(numbers[0]))
-    //     .await?;
-
     if numbers.len() != operators.len() + 1 {
-        msg.channel_id
+        match msg
+            .channel_id
             .send_message(&ctx, |m| m.content("invalid syntax"))
-            .await;
+            .await
+        {
+            Ok(_v) => (),
+            Err(e) => println!("error: {}", e),
+        }
 
         return None;
     }
     // println!("{:?}", numbers);
     // println!("{:?}", operators);
 
-    while operators.contains(&"*") || operators.contains(&"/") {
-        let mut index: usize = 0;
+    while operators.contains(&"*".to_string()) || operators.contains(&"/".to_string()) {
+        let mut _index: usize = 0;
         let mut index_m: usize = 10000;
         let mut index_d: usize = 10000;
         let mut is_div: bool = true;
@@ -267,30 +277,35 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>)
             }
         }
         if index_d < index_m {
-            index = index_d;
-            is_div = true;
+            _index = index_d;
+            // is_div = true;
         } else {
-            index = index_m;
+            _index = index_m;
             is_div = false;
         }
 
         let num: f32 = if is_div {
-            numbers[index] / numbers[index + 1]
+            numbers[_index] / numbers[_index + 1]
         } else {
-            numbers[index] * numbers[index + 1]
+            numbers[_index] * numbers[_index + 1]
         };
 
         let message: String = if is_div { "dividing " } else { "multiplying " }.to_string()
-            + numbers[index].to_string().as_str()
+            + numbers[_index].to_string().as_str()
             + " by "
-            + numbers[index + 1].to_string().as_str();
-        msg.channel_id
+            + numbers[_index + 1].to_string().as_str();
+        match msg
+            .channel_id
             .send_message(&ctx, |m| m.content(message))
-            .await;
+            .await
+        {
+            Ok(_v) => (),
+            Err(e) => println!("error: {}", e),
+        }
 
-        numbers.remove(index + 1);
-        numbers[index] = num;
-        operators.remove(index);
+        numbers.remove(_index + 1);
+        numbers[_index] = num;
+        operators.remove(_index);
     }
 
     for i in 0..numbers.len() {
@@ -298,15 +313,20 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>)
             result = numbers[0];
             continue;
         }
-        match operators[i - 1] {
+        match operators[i - 1].as_str() {
             "-" => {
                 let message: String = "substracting ".to_string()
                     + numbers[i].to_string().as_str()
                     + " from "
                     + result.to_string().as_str();
-                msg.channel_id
+                match msg
+                    .channel_id
                     .send_message(&ctx, |m| m.content(message))
-                    .await;
+                    .await
+                {
+                    Ok(_v) => (),
+                    Err(e) => println!("error: {}", e),
+                }
                 result = result - numbers[i];
             }
             "+" => {
@@ -314,9 +334,14 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<&str>)
                     + numbers[i].to_string().as_str()
                     + " to "
                     + result.to_string().as_str();
-                msg.channel_id
+                match msg
+                    .channel_id
                     .send_message(&ctx, |m| m.content(message))
-                    .await;
+                    .await
+                {
+                    Ok(_v) => (),
+                    Err(e) => println!("error: {}", e),
+                }
                 result = result + numbers[i];
             }
             _ => {
