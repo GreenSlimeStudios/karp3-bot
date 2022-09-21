@@ -76,7 +76,9 @@ async fn main() {
         .group(&GENERAL_GROUP);
 
     // Login with a bot token from the environment
-    let token = "MTAyMDcyMzU0Nzg3NTg0MDAzMA.GsS0y-.4ARNaQCzYzpPDEY_yciDSrm2chqrdxoVSyYnK0";
+    // let token = std::env::var("KARPTOKEN").expect("token");
+    let token = std::fs::read_to_string("token.txt").expect("The file could not be read");
+    // let token = "MTAyMDcyMzU0Nzg3NTg0MDAzMA.GsS0y-.4ARNaQCzYzpPDEY_yciDSrm2chqrdxoVSyYnK0";
     // let intents = GatewayIntents::privileged();
     let intents = GatewayIntents::all();
     let mut client = Client::builder(token, intents)
@@ -386,4 +388,8 @@ async fn calculate_section(
     }
 
     Some(result)
+}
+
+fn to_bongal(decimal: f32) -> String {
+    "noproblemo".to_string()
 }
