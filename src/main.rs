@@ -13,7 +13,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, dekarpdelaspecial, meme, calculate, calculate_verbose)]
+#[commands(ping, dekarpdelaspecial, meme, calculate, calculate_verbose, bongal)]
 struct General;
 
 struct Handler;
@@ -390,6 +390,76 @@ async fn calculate_section(
     Some(result)
 }
 
-fn to_bongal(decimal: f32) -> String {
-    "noproblemo".to_string()
+#[command]
+async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
+    let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    let bongal: String = to_bongal(args[0].to_string());
+
+    msg.reply(&ctx, bongal).await?;
+
+    Ok(())
+}
+
+fn to_bongal(decimal: String) -> String {
+    let mut result: String = String::new();
+
+    let mut value_int: i64 = 0;
+    let mut value_after = 0.0;
+
+    if decimal.contains(".") {
+        let cropped_decimal: Vec<&str> = decimal.split(".").collect();
+        value_int = cropped_decimal[0]
+            .parse::<i64>()
+            .expect("error parsing whole part of decimal to bongal");
+        value_after = cropped_decimal[1]
+            .parse::<f32>()
+            .expect("error parsing the rest of decimal to bongal");
+    } else {
+        value_int = decimal
+            .parse::<i64>()
+            .expect("error parsing value to bongal");
+    }
+
+    while value_int > 1 {
+        println!("{}", value_int);
+        result += match (value_int as f64 % 27.0).round() as i32 {
+            0 => "0",
+            1 => "1",
+            2 => "2",
+            3 => "3",
+            4 => "4",
+            5 => "5",
+            6 => "6",
+            7 => "7",
+            8 => "8",
+            9 => "9",
+
+            10 => "A",
+            11 => "B",
+            12 => "C",
+            13 => "D",
+            14 => "E",
+            15 => "F",
+            16 => "G",
+            17 => "H",
+            18 => "I",
+            19 => "J",
+            20 => "K",
+            21 => "L",
+            22 => "M",
+            23 => "N",
+            24 => "O",
+            25 => "P",
+            26 => "R",
+            27 => "S",
+            _ => "U",
+        };
+        value_int = (value_int as f64 / 27.0).floor() as i64;
+    }
+
+    return result;
+}
+
+fn from_bongal(bongal: String) -> f32 {
+    return 1.0;
 }
