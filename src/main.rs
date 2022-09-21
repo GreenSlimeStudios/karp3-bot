@@ -13,7 +13,7 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, dekarpdelaspecial, meme, calculate)]
+#[commands(ping, dekarpdelaspecial, meme, calculate, calculate_verbose)]
 struct General;
 
 struct Handler;
@@ -150,7 +150,35 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
         .collect();
 
     let mut result: f32 = 0.0;
-    match calculate_section(&msg, &ctx, &args).await {
+    match calculate_section(&msg, &ctx, &args, false).await {
+        Some(v) => {
+            result = v;
+        }
+        None => {
+            msg.channel_id
+                .send_message(&ctx, |m| m.content("error running calculation"))
+                .await?;
+        }
+    }
+
+    // msg.channel_id
+    //     .send_message(&ctx, |m| m.content(result.to_string()))
+    //     .await?;
+    msg.reply(&ctx, result.to_string()).await?;
+    Ok(())
+}
+
+#[command]
+async fn calculate_verbose(ctx: &Context, msg: &Message) -> CommandResult {
+    let args: Vec<String> = msg
+        .content
+        .split(" ")
+        .skip(1)
+        .map(|f| f.to_string())
+        .collect();
+
+    let mut result: f32 = 0.0;
+    match calculate_section(&msg, &ctx, &args, true).await {
         Some(v) => {
             result = v;
         }
@@ -169,10 +197,15 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[async_recursion]
-async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String>) -> Option<f32> {
+async fn calculate_section(
+    msg: &Message,
+    ctx: &Context,
+    suply_args: &Vec<String>,
+    verbose: bool,
+) -> Option<f32> {
     let mut args: Vec<String> = suply_args.into_iter().map(|f| f.to_string()).collect();
     let mut result_f: f32 = 0.0;
-    println!("{:?}", args);
+    // println!("{:?}", args);
     while args.contains(&"(".to_string()) {
         let mut index_open: usize = 0;
         let mut open_counter: usize = 0;
@@ -201,7 +234,7 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String
             new_args.pop();
         }
         // println!("new args: {:?}", new_args);
-        match calculate_section(&msg, &ctx, &new_args).await {
+        match calculate_section(&msg, &ctx, &new_args, verbose).await {
             Some(v) => {
                 result_f = v;
             }
@@ -245,11 +278,7 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String
     }
 
     if numbers.len() != operators.len() + 1 {
-        match msg
-            .channel_id
-            .send_message(&ctx, |m| m.content("invalid syntax"))
-            .await
-        {
+        match msg.reply(&ctx, "invalid syntax").await {
             Ok(_v) => (),
             Err(e) => println!("error: {}", e),
         }
@@ -290,17 +319,19 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String
             numbers[_index] * numbers[_index + 1]
         };
 
-        let message: String = if is_div { "dividing " } else { "multiplying " }.to_string()
-            + numbers[_index].to_string().as_str()
-            + " by "
-            + numbers[_index + 1].to_string().as_str();
-        match msg
-            .channel_id
-            .send_message(&ctx, |m| m.content(message))
-            .await
-        {
-            Ok(_v) => (),
-            Err(e) => println!("error: {}", e),
+        if verbose {
+            let message: String = if is_div { "dividing " } else { "multiplying " }.to_string()
+                + numbers[_index].to_string().as_str()
+                + " by "
+                + numbers[_index + 1].to_string().as_str();
+            match msg
+                .channel_id
+                .send_message(&ctx, |m| m.content(message))
+                .await
+            {
+                Ok(_v) => (),
+                Err(e) => println!("error: {}", e),
+            }
         }
 
         numbers.remove(_index + 1);
@@ -315,32 +346,36 @@ async fn calculate_section(msg: &Message, ctx: &Context, suply_args: &Vec<String
         }
         match operators[i - 1].as_str() {
             "-" => {
-                let message: String = "substracting ".to_string()
-                    + numbers[i].to_string().as_str()
-                    + " from "
-                    + result.to_string().as_str();
-                match msg
-                    .channel_id
-                    .send_message(&ctx, |m| m.content(message))
-                    .await
-                {
-                    Ok(_v) => (),
-                    Err(e) => println!("error: {}", e),
+                if verbose {
+                    let message: String = "substracting ".to_string()
+                        + numbers[i].to_string().as_str()
+                        + " from "
+                        + result.to_string().as_str();
+                    match msg
+                        .channel_id
+                        .send_message(&ctx, |m| m.content(message))
+                        .await
+                    {
+                        Ok(_v) => (),
+                        Err(e) => println!("error: {}", e),
+                    }
                 }
                 result = result - numbers[i];
             }
             "+" => {
-                let message: String = "adding ".to_string()
-                    + numbers[i].to_string().as_str()
-                    + " to "
-                    + result.to_string().as_str();
-                match msg
-                    .channel_id
-                    .send_message(&ctx, |m| m.content(message))
-                    .await
-                {
-                    Ok(_v) => (),
-                    Err(e) => println!("error: {}", e),
+                if verbose {
+                    let message: String = "adding ".to_string()
+                        + numbers[i].to_string().as_str()
+                        + " to "
+                        + result.to_string().as_str();
+                    match msg
+                        .channel_id
+                        .send_message(&ctx, |m| m.content(message))
+                        .await
+                    {
+                        Ok(_v) => (),
+                        Err(e) => println!("error: {}", e),
+                    }
                 }
                 result = result + numbers[i];
             }
