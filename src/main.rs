@@ -401,28 +401,37 @@ async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 fn to_bongal(decimal: String) -> String {
+    let mut decimal = decimal;
     let mut result: String = String::new();
 
-    let mut value_int: i64 = 0;
+    let mut value_int: u128 = 0;
     let mut value_after = 0.0;
+    let is_under: bool = decimal.contains("-");
+    if is_under {
+        decimal.remove(0);
+    }
 
     if decimal.contains(".") {
         let cropped_decimal: Vec<&str> = decimal.split(".").collect();
         value_int = cropped_decimal[0]
-            .parse::<i64>()
+            .parse::<u128>()
             .expect("error parsing whole part of decimal to bongal");
+
         value_after = cropped_decimal[1]
             .parse::<f32>()
             .expect("error parsing the rest of decimal to bongal");
     } else {
         value_int = decimal
-            .parse::<i64>()
+            .parse::<u128>()
             .expect("error parsing value to bongal");
+    }
+    if is_under {
+        result += "-";
     }
 
     while value_int > 1 {
         println!("{}", value_int);
-        result += match (value_int as f64 % 27.0).round() as i32 {
+        result += match value_int % 27 {
             0 => "0",
             1 => "1",
             2 => "2",
@@ -433,7 +442,6 @@ fn to_bongal(decimal: String) -> String {
             7 => "7",
             8 => "8",
             9 => "9",
-
             10 => "A",
             11 => "B",
             12 => "C",
@@ -454,7 +462,7 @@ fn to_bongal(decimal: String) -> String {
             27 => "S",
             _ => "U",
         };
-        value_int = (value_int as f64 / 27.0).floor() as i64;
+        value_int = value_int / 27;
     }
 
     return result;
