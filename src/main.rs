@@ -18,6 +18,7 @@ use serenity::prelude::*;
     dekarpdelaspecial,
     meme,
     calculate,
+    calculate27,
     calculate_verbose,
     bongal,
     decimal
@@ -159,8 +160,8 @@ async fn calculate(ctx: &Context, msg: &Message) -> CommandResult {
         .map(|f| f.to_string())
         .collect();
 
-    let mut result: f32 = 0.0;
-    match calculate_section(&msg, &ctx, &args, false).await {
+    let mut result: f64 = 0.0;
+    match calculate_section(&msg, &ctx, &args, false, false).await {
         Some(v) => {
             result = v;
         }
@@ -187,8 +188,8 @@ async fn calculate_verbose(ctx: &Context, msg: &Message) -> CommandResult {
         .map(|f| f.to_string())
         .collect();
 
-    let mut result: f32 = 0.0;
-    match calculate_section(&msg, &ctx, &args, true).await {
+    let mut result: f64 = 0.0;
+    match calculate_section(&msg, &ctx, &args, true, false).await {
         Some(v) => {
             result = v;
         }
@@ -205,6 +206,33 @@ async fn calculate_verbose(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(&ctx, result.to_string()).await?;
     Ok(())
 }
+#[command]
+async fn calculate27(ctx: &Context, msg: &Message) -> CommandResult {
+    let args: Vec<String> = msg
+        .content
+        .split(" ")
+        .skip(1)
+        .map(|f| f.to_string())
+        .collect();
+
+    let mut result: f64 = 0.0;
+    match calculate_section(&msg, &ctx, &args, false, true).await {
+        Some(v) => {
+            result = v;
+        }
+        None => {
+            msg.channel_id
+                .send_message(&ctx, |m| m.content("error running calculation"))
+                .await?;
+        }
+    }
+
+    // msg.channel_id
+    //     .send_message(&ctx, |m| m.content(result.to_string()))
+    //     .await?;
+    msg.reply(&ctx, to_bongal(result.to_string())).await?;
+    Ok(())
+}
 
 #[async_recursion]
 async fn calculate_section(
@@ -212,9 +240,10 @@ async fn calculate_section(
     ctx: &Context,
     suply_args: &Vec<String>,
     verbose: bool,
-) -> Option<f32> {
+    is_bongal: bool,
+) -> Option<f64> {
     let mut args: Vec<String> = suply_args.into_iter().map(|f| f.to_string()).collect();
-    let mut result_f: f32 = 0.0;
+    let mut result_f: f64 = 0.0;
     // println!("{:?}", args);
     while args.contains(&"(".to_string()) {
         let mut index_open: usize = 0;
@@ -244,7 +273,7 @@ async fn calculate_section(
             new_args.pop();
         }
         // println!("new args: {:?}", new_args);
-        match calculate_section(&msg, &ctx, &new_args, verbose).await {
+        match calculate_section(&msg, &ctx, &new_args, verbose, is_bongal).await {
             Some(v) => {
                 result_f = v;
             }
@@ -259,8 +288,8 @@ async fn calculate_section(
         // println!("args after () deletion: {:?}", args);
     }
 
-    let mut result: f32 = 0.0;
-    let mut numbers: Vec<f32> = Vec::new();
+    let mut result: f64 = 0.0;
+    let mut numbers: Vec<f64> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
     for i in 0..args.len() {
@@ -269,21 +298,27 @@ async fn calculate_section(
             "+" => operators.push(args[i].clone()),
             "-" => operators.push(args[i].clone()),
             "/" => operators.push(args[i].clone()),
-            _ => match args[i].parse::<f32>() {
-                Ok(v) => numbers.push(v),
-                Err(e) => {
-                    match msg
-                        .channel_id
-                        .send_message(&ctx, |m| m.content(e.to_string()))
-                        .await
-                    {
-                        Ok(_v) => (),
-                        Err(e) => println!("error: {}", e),
-                    }
+            _ => {
+                if is_bongal {
+                    numbers.push(from_bongal(args[i].clone()));
+                } else {
+                    match args[i].parse::<f64>() {
+                        Ok(v) => numbers.push(v),
+                        Err(e) => {
+                            match msg
+                                .channel_id
+                                .send_message(&ctx, |m| m.content(e.to_string()))
+                                .await
+                            {
+                                Ok(_v) => (),
+                                Err(e) => println!("error: {}", e),
+                            }
 
-                    return None;
+                            return None;
+                        }
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -323,7 +358,7 @@ async fn calculate_section(
             is_div = false;
         }
 
-        let num: f32 = if is_div {
+        let num: f64 = if is_div {
             numbers[_index] / numbers[_index + 1]
         } else {
             numbers[_index] * numbers[_index + 1]
