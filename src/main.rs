@@ -13,7 +13,15 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 
 #[group]
-#[commands(ping, dekarpdelaspecial, meme, calculate, calculate_verbose, bongal)]
+#[commands(
+    ping,
+    dekarpdelaspecial,
+    meme,
+    calculate,
+    calculate_verbose,
+    bongal,
+    decimal
+)]
 struct General;
 
 struct Handler;
@@ -399,6 +407,15 @@ async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+#[command]
+async fn decimal(ctx: &Context, msg: &Message) -> CommandResult {
+    let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    let decimal: f64 = from_bongal(args[0].to_string());
+
+    msg.reply(&ctx, decimal).await?;
+
+    Ok(())
+}
 
 fn to_bongal(decimal: String) -> String {
     let mut decimal = decimal;
@@ -442,32 +459,79 @@ fn to_bongal(decimal: String) -> String {
             7 => "7",
             8 => "8",
             9 => "9",
-            10 => "A",
-            11 => "B",
-            12 => "C",
-            13 => "D",
-            14 => "E",
+            10 => "α",
+            11 => "β",
+            12 => "γ",
+            13 => "δ",
+            14 => "ρ",
             15 => "F",
-            16 => "G",
-            17 => "H",
-            18 => "I",
-            19 => "J",
-            20 => "K",
-            21 => "L",
-            22 => "M",
-            23 => "N",
+            16 => "η",
+            17 => "∅",
+            18 => "c",
+            19 => "K",
+            20 => "ʎ",
+            21 => "u",
+            22 => "V",
+            23 => "Ś",
             24 => "O",
-            25 => "P",
-            26 => "R",
-            27 => "S",
+            25 => "π",
+            26 => "P",
             _ => "U",
         };
         value_int = value_int / 27;
     }
-
+    let result_arr: Vec<String> = result.chars().map(|f| f.to_string()).rev().collect();
+    result = "".to_string();
+    for i in 0..result_arr.len() {
+        result += result_arr[i].as_str();
+    }
     return result;
 }
 
-fn from_bongal(bongal: String) -> f32 {
-    return 1.0;
+fn from_bongal(bongal: String) -> f64 {
+    let mut result: f64 = 0.0;
+    let mut is_below = false;
+    if bongal.contains(&".") {
+        is_below = true;
+    }
+    // if is_below{
+
+    // }
+    let mut chars: Vec<String> = bongal.chars().map(|f| f.to_string()).collect();
+    chars.reverse();
+
+    for i in 0..chars.len() {
+        match chars[i].as_str() {
+            "0" => result += 0.0 * (27u64.pow(i as u32)) as f64,
+            "1" => result += 1.0 * (27u64.pow(i as u32)) as f64,
+            "2" => result += 2.0 * (27u64.pow(i as u32)) as f64,
+            "3" => result += 3.0 * (27u64.pow(i as u32)) as f64,
+            "4" => result += 4.0 * (27u64.pow(i as u32)) as f64,
+            "5" => result += 5.0 * (27u64.pow(i as u32)) as f64,
+            "6" => result += 6.0 * (27u64.pow(i as u32)) as f64,
+            "7" => result += 7.0 * (27u64.pow(i as u32)) as f64,
+            "8" => result += 8.0 * (27u64.pow(i as u32)) as f64,
+            "9" => result += 9.0 * (27u64.pow(i as u32)) as f64,
+            "α" => result += 10.0 * (27u64.pow(i as u32)) as f64,
+            "β" => result += 11.0 * (27u64.pow(i as u32)) as f64,
+            "γ" => result += 12.0 * (27u64.pow(i as u32)) as f64,
+            "δ" => result += 13.0 * (27u64.pow(i as u32)) as f64,
+            "ρ" => result += 14.0 * (27u64.pow(i as u32)) as f64,
+            "F" => result += 15.0 * (27u64.pow(i as u32)) as f64,
+            "η" => result += 16.0 * (27u64.pow(i as u32)) as f64,
+            "∅" => result += 17.0 * (27u64.pow(i as u32)) as f64,
+            "c" => result += 18.0 * (27u64.pow(i as u32)) as f64,
+            "K" => result += 19.0 * (27u64.pow(i as u32)) as f64,
+            "ʎ" => result += 20.0 * (27u64.pow(i as u32)) as f64,
+            "u" => result += 21.0 * (27u64.pow(i as u32)) as f64,
+            "V" => result += 22.0 * (27u64.pow(i as u32)) as f64,
+            "Ś" => result += 23.0 * (27u64.pow(i as u32)) as f64,
+            "O" => result += 24.0 * (27u64.pow(i as u32)) as f64,
+            "π" => result += 25.0 * (27u64.pow(i as u32)) as f64,
+            "P" => result += 26.0 * (27u64.pow(i as u32)) as f64,
+            _ => (),
+        }
+        println!("from {}", chars[i]);
+    }
+    return result;
 }
