@@ -230,7 +230,14 @@ async fn calculate27(ctx: &Context, msg: &Message) -> CommandResult {
     // msg.channel_id
     //     .send_message(&ctx, |m| m.content(result.to_string()))
     //     .await?;
-    msg.reply(&ctx, to_bongal(result.to_string())).await?;
+    msg.reply(
+        &ctx,
+        match to_bongal(result.to_string()) {
+            Some(v) => v,
+            None => "error".to_string(),
+        },
+    )
+    .await?;
     Ok(())
 }
 
@@ -300,7 +307,16 @@ async fn calculate_section(
             "/" => operators.push(args[i].clone()),
             _ => {
                 if is_bongal {
-                    numbers.push(from_bongal(args[i].clone()));
+                    match from_bongal(args[i].clone()) {
+                        Some(v) => numbers.push(v),
+                        None => {
+                            msg.reply(&ctx, "invalid bongal->decimal conversion")
+                                .await
+                                .unwrap();
+                            return None;
+                        }
+                    }
+                    // numbers.push(from_bongal(args[i].clone()));
                 } else {
                     match args[i].parse::<f64>() {
                         Ok(v) => numbers.push(v),
@@ -436,7 +452,16 @@ async fn calculate_section(
 #[command]
 async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
     let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
-    let bongal: String = to_bongal(args[0].to_string());
+    let mut bongal: String = String::new();
+    match to_bongal(args[0].to_string()) {
+        Some(v) => {
+            bongal = v;
+        }
+        None => {
+            msg.reply(&ctx, "invalid bongal").await.unwrap();
+            return Ok(());
+        }
+    }
 
     msg.reply(&ctx, bongal).await?;
 
@@ -445,14 +470,23 @@ async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn decimal(ctx: &Context, msg: &Message) -> CommandResult {
     let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
-    let decimal: f64 = from_bongal(args[0].to_string());
+    let mut decimal: f64 = 0.0;
 
+    match from_bongal(args[0].to_string()) {
+        Some(v) => decimal = v,
+        None => {
+            msg.reply(&ctx, "invalid bongal->decimal conversion")
+                .await
+                .unwrap();
+            return Ok(());
+        }
+    }
     msg.reply(&ctx, decimal).await?;
 
     Ok(())
 }
 
-fn to_bongal(decimal: String) -> String {
+fn to_bongal(decimal: String) -> Option<String> {
     let mut decimal = decimal;
     let mut result: String = String::new();
 
@@ -484,36 +518,36 @@ fn to_bongal(decimal: String) -> String {
 
     while value_int > 1 {
         println!("{}", value_int);
-        result += match value_int % 27 {
-            0 => "0",
-            1 => "1",
-            2 => "2",
-            3 => "3",
-            4 => "4",
-            5 => "5",
-            6 => "6",
-            7 => "7",
-            8 => "8",
-            9 => "9",
-            10 => "α",
-            11 => "β",
-            12 => "γ",
-            13 => "δ",
-            14 => "ρ",
-            15 => "F",
-            16 => "η",
-            17 => "∅",
-            18 => "c",
-            19 => "K",
-            20 => "ʎ",
-            21 => "u",
-            22 => "V",
-            23 => "Ś",
-            24 => "O",
-            25 => "π",
-            26 => "P",
-            _ => "U",
-        };
+        match value_int % 27 {
+            0 => result += "0",
+            1 => result += "1",
+            2 => result += "2",
+            3 => result += "3",
+            4 => result += "4",
+            5 => result += "5",
+            6 => result += "6",
+            7 => result += "7",
+            8 => result += "8",
+            9 => result += "9",
+            10 => result += "α",
+            11 => result += "β",
+            12 => result += "γ",
+            13 => result += "δ",
+            14 => result += "ρ",
+            15 => result += "F",
+            16 => result += "η",
+            17 => result += "∅",
+            18 => result += "c",
+            19 => result += "K",
+            20 => result += "ʎ",
+            21 => result += "u",
+            22 => result += "V",
+            23 => result += "Ś",
+            24 => result += "O",
+            25 => result += "π",
+            26 => result += "P",
+            _ => return None,
+        }
         value_int = value_int / 27;
     }
     let result_arr: Vec<String> = result.chars().map(|f| f.to_string()).rev().collect();
@@ -532,44 +566,44 @@ fn to_bongal(decimal: String) -> String {
 
             println!("{value_after} {}", value_str[0]);
 
-            result += match value_str[0] {
-                "0" => "0",
-                "1" => "1",
-                "2" => "2",
-                "3" => "3",
-                "4" => "4",
-                "5" => "5",
-                "6" => "6",
-                "7" => "7",
-                "8" => "8",
-                "9" => "9",
-                "10" => "α",
-                "11" => "β",
-                "12" => "γ",
-                "13" => "δ",
-                "14" => "ρ",
-                "15" => "F",
-                "16" => "η",
-                "17" => "∅",
-                "18" => "c",
-                "19" => "K",
-                "20" => "ʎ",
-                "21" => "u",
-                "22" => "V",
-                "23" => "Ś",
-                "24" => "O",
-                "25" => "π",
-                "26" => "P",
-                _ => "U",
-            };
+            match value_str[0] {
+                "0" => result += "0",
+                "1" => result += "1",
+                "2" => result += "2",
+                "3" => result += "3",
+                "4" => result += "4",
+                "5" => result += "5",
+                "6" => result += "6",
+                "7" => result += "7",
+                "8" => result += "8",
+                "9" => result += "9",
+                "10" => result += "α",
+                "11" => result += "β",
+                "12" => result += "γ",
+                "13" => result += "δ",
+                "14" => result += "ρ",
+                "15" => result += "F",
+                "16" => result += "η",
+                "17" => result += "∅",
+                "18" => result += "c",
+                "19" => result += "K",
+                "20" => result += "ʎ",
+                "21" => result += "u",
+                "22" => result += "V",
+                "23" => result += "Ś",
+                "24" => result += "O",
+                "25" => result += "π",
+                "26" => result += "P",
+                _ => return None,
+            }
             value_after = value_after - value_after.floor();
         }
     }
 
-    return result;
+    return Some(result);
 }
 
-fn from_bongal(bongal: String) -> f64 {
+fn from_bongal(bongal: String) -> Option<f64> {
     let mut result: f64 = 0.0;
     let mut is_below = false;
     // if is_below{
@@ -619,7 +653,9 @@ fn from_bongal(bongal: String) -> f64 {
             "O" => result += 24.0 * (27u64.pow(i as u32)) as f64,
             "π" => result += 25.0 * (27u64.pow(i as u32)) as f64,
             "P" => result += 26.0 * (27u64.pow(i as u32)) as f64,
-            _ => (),
+            _ => {
+                return None;
+            }
         }
         println!("from {}", chars_int[i]);
     }
@@ -652,12 +688,14 @@ fn from_bongal(bongal: String) -> f64 {
             "O" => result += 24.0 / (27u64.pow(i as u32 + 1)) as f64,
             "π" => result += 25.0 / (27u64.pow(i as u32 + 1)) as f64,
             "P" => result += 26.0 / (27u64.pow(i as u32 + 1)) as f64,
-            _ => (),
+            _ => {
+                return None;
+            }
         }
         println!("from {}", chars_int[i]);
     }
     if is_below {
         result *= -1.0;
     }
-    return result;
+    return Some(result);
 }
