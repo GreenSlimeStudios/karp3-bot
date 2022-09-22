@@ -491,17 +491,26 @@ fn to_bongal(decimal: String) -> String {
 fn from_bongal(bongal: String) -> f64 {
     let mut result: f64 = 0.0;
     let mut is_below = false;
-    if bongal.contains(&".") {
-        is_below = true;
-    }
     // if is_below{
 
     // }
-    let mut chars: Vec<String> = bongal.chars().map(|f| f.to_string()).collect();
-    chars.reverse();
+    let mut chars_after: Vec<String> = Vec::new();
+    let mut chars_int: Vec<String> = Vec::new();
+    if bongal.contains(".") {
+        let cropped: Vec<&str> = bongal.split(".").collect();
+        chars_int = cropped[0].chars().map(|f| f.to_string()).collect();
+        chars_after = cropped[1].chars().map(|f| f.to_string()).collect();
+    } else {
+        chars_int = bongal.chars().map(|f| f.to_string()).collect();
+    }
+    if bongal.contains(&"-") {
+        is_below = true;
+        chars_int.remove(0);
+    }
+    chars_int.reverse();
 
-    for i in 0..chars.len() {
-        match chars[i].as_str() {
+    for i in 0..chars_int.len() {
+        match chars_int[i].as_str() {
             "0" => result += 0.0 * (27u64.pow(i as u32)) as f64,
             "1" => result += 1.0 * (27u64.pow(i as u32)) as f64,
             "2" => result += 2.0 * (27u64.pow(i as u32)) as f64,
@@ -531,7 +540,43 @@ fn from_bongal(bongal: String) -> f64 {
             "P" => result += 26.0 * (27u64.pow(i as u32)) as f64,
             _ => (),
         }
-        println!("from {}", chars[i]);
+        println!("from {}", chars_int[i]);
+    }
+
+    for i in 0..chars_after.len() {
+        match chars_after[i].as_str() {
+            "1" => result += 1.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "2" => result += 2.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "3" => result += 3.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "4" => result += 4.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "5" => result += 5.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "6" => result += 6.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "7" => result += 7.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "8" => result += 8.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "9" => result += 9.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "α" => result += 10.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "β" => result += 11.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "γ" => result += 12.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "δ" => result += 13.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "ρ" => result += 14.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "F" => result += 15.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "η" => result += 16.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "∅" => result += 17.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "c" => result += 18.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "K" => result += 19.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "ʎ" => result += 20.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "u" => result += 21.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "V" => result += 22.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "Ś" => result += 23.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "O" => result += 24.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "π" => result += 25.0 / (27u64.pow(i as u32 + 1)) as f64,
+            "P" => result += 26.0 / (27u64.pow(i as u32 + 1)) as f64,
+            _ => (),
+        }
+        println!("from {}", chars_int[i]);
+    }
+    if is_below {
+        result *= -1.0;
     }
     return result;
 }
