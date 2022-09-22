@@ -434,8 +434,9 @@ fn to_bongal(decimal: String) -> String {
             .parse::<u128>()
             .expect("error parsing whole part of decimal to bongal");
 
-        value_after = cropped_decimal[1]
-            .parse::<f32>()
+        value_after = ("0.".to_string() + cropped_decimal[1])
+            .as_str()
+            .parse::<f64>()
             .expect("error parsing the rest of decimal to bongal");
     } else {
         value_int = decimal
@@ -485,6 +486,51 @@ fn to_bongal(decimal: String) -> String {
     for i in 0..result_arr.len() {
         result += result_arr[i].as_str();
     }
+
+    if decimal.contains(".") {
+        result += ".";
+        for _i in 0..5 {
+            value_after *= 27.0;
+
+            let value_after_string: String = value_after.to_string().clone();
+            let value_str: Vec<&str> = value_after_string.split(".").collect();
+
+            println!("{value_after} {}", value_str[0]);
+
+            result += match value_str[0] {
+                "0" => "0",
+                "1" => "1",
+                "2" => "2",
+                "3" => "3",
+                "4" => "4",
+                "5" => "5",
+                "6" => "6",
+                "7" => "7",
+                "8" => "8",
+                "9" => "9",
+                "10" => "α",
+                "11" => "β",
+                "12" => "γ",
+                "13" => "δ",
+                "14" => "ρ",
+                "15" => "F",
+                "16" => "η",
+                "17" => "∅",
+                "18" => "c",
+                "19" => "K",
+                "20" => "ʎ",
+                "21" => "u",
+                "22" => "V",
+                "23" => "Ś",
+                "24" => "O",
+                "25" => "π",
+                "26" => "P",
+                _ => "U",
+            };
+            value_after = value_after - value_after.floor();
+        }
+    }
+
     return result;
 }
 
