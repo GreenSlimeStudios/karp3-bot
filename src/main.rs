@@ -36,8 +36,8 @@ impl EventHandler for Handler {
             nick = match msg.author_nick(&ctx).await {
                 Some(v) => v,
                 None => {
-                    println!("error reading nickname");
-                    "error".to_string()
+                    // println!("error reading nickname");
+                    "None".to_string()
                 }
             };
             // Some lang actions
@@ -517,7 +517,7 @@ fn to_bongal(decimal: String) -> Option<String> {
     }
 
     while value_int > 1 {
-        println!("{}", value_int);
+        // println!("{}", value_int);
         match value_int % 27 {
             0 => result += "0",
             1 => result += "1",
@@ -564,7 +564,7 @@ fn to_bongal(decimal: String) -> Option<String> {
             let value_after_string: String = value_after.to_string().clone();
             let value_str: Vec<&str> = value_after_string.split(".").collect();
 
-            println!("{value_after} {}", value_str[0]);
+            // println!("{value_after} {}", value_str[0]);
 
             match value_str[0] {
                 "0" => result += "0",
@@ -657,7 +657,7 @@ fn from_bongal(bongal: String) -> Option<f64> {
                 return None;
             }
         }
-        println!("from {}", chars_int[i]);
+        // println!("from {}", chars_int[i]);
     }
 
     for i in 0..chars_after.len() {
@@ -692,7 +692,7 @@ fn from_bongal(bongal: String) -> Option<f64> {
                 return None;
             }
         }
-        println!("from {}", chars_int[i]);
+        // println!("from {}", chars_int[i]);
     }
     if is_below {
         result *= -1.0;
