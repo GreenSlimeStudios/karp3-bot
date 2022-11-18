@@ -1,4 +1,10 @@
+mod lists;
+
+use lists::*;
+
 use async_recursion::async_recursion;
+use serenity::cache::FromStrAndCache;
+use serenity::model::prelude::{Emoji, EmojiId, MessageReaction, ReactionType};
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -73,6 +79,29 @@ impl EventHandler for Handler {
             msg.content
         ) {
             eprintln!("Couldn't write to file: {}", e);
+        }
+
+        let cat = ReactionType::try_from("<:oo:1043040617388851251>").unwrap();
+        let dripczak = ReactionType::try_from("<:dripczak:1026584223492096080>").unwrap();
+
+        if msg.content.contains("oo") {
+            match msg.react(&ctx, cat.clone()).await {
+                Ok(_v) => (),
+                Err(e) => {
+                    println!("error adding reaction: {}", e);
+                }
+            }
+        }
+
+        for word in get_drip_list() {
+            if msg.content.contains(word.as_str()) {
+                match msg.react(&ctx, dripczak.clone()).await {
+                    Ok(_v) => (),
+                    Err(e) => {
+                        println!("error adding reaction: {}", e);
+                    }
+                }
+            }
         }
     }
     // Since data is located in Context, this means you are also able to use it within events!
