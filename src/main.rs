@@ -84,11 +84,13 @@ impl EventHandler for Handler {
         let cat = ReactionType::try_from("<:oo:1043040617388851251>").unwrap();
         let dripczak = ReactionType::try_from("<:dripczak:1026584223492096080>").unwrap();
 
-        if msg.content.contains("oo") {
-            match msg.react(&ctx, cat.clone()).await {
-                Ok(_v) => (),
-                Err(e) => {
-                    println!("error adding reaction: {}", e);
+        for word in get_cat_list() {
+            if msg.content.contains(word.as_str()) {
+                match msg.react(&ctx, cat.clone()).await {
+                    Ok(_v) => (),
+                    Err(e) => {
+                        println!("error adding cat reaction: {}", e);
+                    }
                 }
             }
         }
@@ -98,7 +100,7 @@ impl EventHandler for Handler {
                 match msg.react(&ctx, dripczak.clone()).await {
                     Ok(_v) => (),
                     Err(e) => {
-                        println!("error adding reaction: {}", e);
+                        println!("error adding drip reaction: {}", e);
                     }
                 }
             }
