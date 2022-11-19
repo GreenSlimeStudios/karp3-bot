@@ -1,9 +1,10 @@
+mod commands;
 mod lists;
 
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::ReactionType;
+use serenity::model::prelude::{Channel, ReactionType};
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -14,8 +15,14 @@ use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{CommandResult, StandardFramework};
 // use serenity::futures::TryFutureExt;
 // use serenity::http::CacheHttp;
+use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::channel::Message;
+use serenity::model::gateway::Ready;
+use serenity::model::id::GuildId;
 use serenity::prelude::*;
+
+// use serenity::model::application::command::Command;
+// use serenity::prelude::*;
 
 #[group]
 #[commands(
@@ -136,7 +143,48 @@ impl EventHandler for Handler {
             }
         }
     }
-    // Since data is located in Context, this means you are also able to use it within events!
+    async fn ready(&self, ctx: Context, _ready: Ready) {
+        println!("{} is connected!", _ready.user.name);
+
+        let guild_ids = _ready.user.guilds(&ctx).await.unwrap();
+        for guild_id in &guild_ids {
+            let _commands =
+                GuildId::set_application_commands(&guild_id.id, &ctx.http, |commands| {
+                    commands
+                        .create_application_command(|command| commands::ping::register(command))
+                        .create_application_command(|command| commands::yum::register(command))
+                })
+                .await;
+
+            // println!(
+            //     "I now have the following guild slash commands: {:#?}",
+            //     _commands
+            // );
+        }
+    }
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::ApplicationCommand(command) = interaction {
+            // println!("Received command interaction: {:#?}", command);
+
+            let content = match command.data.name.as_str() {
+                "ping" => commands::ping::run(&command.data.options),
+                "yum" => commands::yum::run(&command.data.options),
+                "rock" => commands::yum::run(&command.data.options),
+                _ => "not implemented :(".to_string(),
+            };
+
+            if let Err(why) = command
+                .create_interaction_response(&ctx.http, |response| {
+                    response
+                        .kind(InteractionResponseType::ChannelMessageWithSource)
+                        .interaction_response_data(|message| message.content(content))
+                })
+                .await
+            {
+                println!("Cannot respond to slash command: {}", why);
+            }
+        }
+    }
 }
 
 #[tokio::main]

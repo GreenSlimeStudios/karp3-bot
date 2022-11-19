@@ -8,6 +8,7 @@ pub fn get_sus_list() -> Vec<String> {
         "kogut".to_string(),
         "cum".to_string(),
         "strange".to_string(),
+        "baka".to_string(),
     ]
 }
 pub fn get_cat_list() -> Vec<String> {
