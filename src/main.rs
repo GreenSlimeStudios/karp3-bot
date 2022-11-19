@@ -3,8 +3,7 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::cache::FromStrAndCache;
-use serenity::model::prelude::{Emoji, EmojiId, MessageReaction, ReactionType};
+use serenity::model::prelude::ReactionType;
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -83,9 +82,36 @@ impl EventHandler for Handler {
 
         let cat = ReactionType::try_from("<:oo:1043040617388851251>").unwrap();
         let dripczak = ReactionType::try_from("<:dripczak:1026584223492096080>").unwrap();
+        let _the_rock = ReactionType::try_from("<:the_rock:982328750240833536>").unwrap();
+        let _the_beans = ReactionType::try_from("<:the_beans:1009140627272900648>").unwrap();
+
+        for word in get_sus_list() {
+            if msg
+                .content
+                .to_lowercase()
+                .contains(word.to_lowercase().as_str())
+            {
+                if rand::thread_rng().gen_range(0..=4) == 1 {
+                    match msg
+                        .channel_id
+                        .send_message(&ctx, |m| {
+                            m.content("<:the_rock:982328750240833536>".to_string())
+                        })
+                        .await
+                    {
+                        Ok(_v) => (),
+                        Err(e) => println!("{}", e),
+                    }
+                }
+            }
+        }
 
         for word in get_cat_list() {
-            if msg.content.contains(word.as_str()) {
+            if msg
+                .content
+                .to_lowercase()
+                .contains(word.to_lowercase().as_str())
+            {
                 match msg.react(&ctx, cat.clone()).await {
                     Ok(_v) => (),
                     Err(e) => {
@@ -96,7 +122,11 @@ impl EventHandler for Handler {
         }
 
         for word in get_drip_list() {
-            if msg.content.contains(word.as_str()) {
+            if msg
+                .content
+                .to_lowercase()
+                .contains(word.to_lowercase().as_str())
+            {
                 match msg.react(&ctx, dripczak.clone()).await {
                     Ok(_v) => (),
                     Err(e) => {
@@ -482,7 +512,7 @@ async fn calculate_section(
 #[command]
 async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
     let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
-    let mut bongal: String = String::new();
+    let bongal: String;
     match to_bongal(args[0].to_string()) {
         Some(v) => {
             bongal = v;
@@ -500,7 +530,7 @@ async fn bongal(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn decimal(ctx: &Context, msg: &Message) -> CommandResult {
     let args: Vec<&str> = msg.content.split(" ").skip(1).collect();
-    let mut decimal: f64 = 0.0;
+    let decimal: f64;
 
     match from_bongal(args[0].to_string()) {
         Some(v) => decimal = v,
@@ -520,7 +550,7 @@ fn to_bongal(decimal: String) -> Option<String> {
     let mut decimal = decimal;
     let mut result: String = String::new();
 
-    let mut value_int: u128 = 0;
+    let mut value_int: u128;
     let mut value_after = 0.0;
     let is_under: bool = decimal.contains("-");
     if is_under {
@@ -640,7 +670,7 @@ fn from_bongal(bongal: String) -> Option<f64> {
 
     // }
     let mut chars_after: Vec<String> = Vec::new();
-    let mut chars_int: Vec<String> = Vec::new();
+    let mut chars_int: Vec<String>;
     if bongal.contains(".") {
         let cropped: Vec<&str> = bongal.split(".").collect();
         chars_int = cropped[0].chars().map(|f| f.to_string()).collect();
