@@ -4,7 +4,7 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::{Channel, ReactionType};
+use serenity::model::prelude::ReactionType;
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -20,6 +20,8 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
+
+use search_with_google::search;
 
 // use serenity::model::application::command::Command;
 // use serenity::prelude::*;
@@ -153,6 +155,12 @@ impl EventHandler for Handler {
                     commands
                         .create_application_command(|command| commands::ping::register(command))
                         .create_application_command(|command| commands::yum::register(command))
+                        .create_application_command(|command| {
+                            commands::numberinput::register(command)
+                        })
+                        .create_application_command(|command| {
+                            commands::karp_search::register(command)
+                        })
                 })
                 .await;
 
@@ -170,8 +178,14 @@ impl EventHandler for Handler {
                 "ping" => commands::ping::run(&command.data.options),
                 "yum" => commands::yum::run(&command.data.options),
                 "rock" => commands::yum::run(&command.data.options),
+                "numberinput" => commands::numberinput::run(&command.data.options),
+                "karp-search" => commands::karp_search::run(&command.data.options).await,
+                // "karp-search" => search("rust", 3, None).await.unwrap().len().to_string(),
                 _ => "not implemented :(".to_string(),
             };
+
+            // Runtime::new().unwrap();
+            // let content = search("rust", 3, None).await.unwrap().len().to_string();
 
             if let Err(why) = command
                 .create_interaction_response(&ctx.http, |response| {
@@ -185,6 +199,14 @@ impl EventHandler for Handler {
             }
         }
     }
+}
+
+async fn get_result_len() -> String {
+    let results = search("rust", 3, None).await.unwrap();
+    return results.len().to_string();
+    // Should return results of links and titles.
+    // println!("karp results! {:?}", results);
+    // return "sus".to_string();
 }
 
 #[tokio::main]
