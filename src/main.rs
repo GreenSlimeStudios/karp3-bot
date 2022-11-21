@@ -92,7 +92,8 @@ impl EventHandler for Handler {
         let cat = ReactionType::try_from("<:oo:1043040617388851251>").unwrap();
         let dripczak = ReactionType::try_from("<:dripczak:1026584223492096080>").unwrap();
         let _the_rock = ReactionType::try_from("<:the_rock:982328750240833536>").unwrap();
-        let _the_beans = ReactionType::try_from("<:the_beans:1009140627272900648>").unwrap();
+        let the_beans = ReactionType::try_from("<:the_beans:1009140627272900648>").unwrap();
+        let jaslo = ReactionType::try_from("<:jaslo:1044185772556812288>").unwrap();
 
         for word in get_sus_list() {
             if msg
@@ -100,7 +101,7 @@ impl EventHandler for Handler {
                 .to_lowercase()
                 .contains(word.to_lowercase().as_str())
             {
-                if rand::thread_rng().gen_range(0..=4) == 1 {
+                if rand::thread_rng().gen_range(0..3) == 0 {
                     match msg
                         .channel_id
                         .send_message(&ctx, |m| {
@@ -125,6 +126,26 @@ impl EventHandler for Handler {
                     Ok(_v) => (),
                     Err(e) => {
                         println!("error adding cat reaction: {}", e);
+                    }
+                }
+            }
+        }
+        for word in get_thick_list() {
+            if msg
+                .content
+                .to_lowercase()
+                .contains(word.to_lowercase().as_str())
+            {
+                match msg.react(&ctx, the_beans.clone()).await {
+                    Ok(_v) => (),
+                    Err(e) => {
+                        println!("error adding jaslo reaction: {}", e);
+                    }
+                }
+                match msg.react(&ctx, jaslo.clone()).await {
+                    Ok(_v) => (),
+                    Err(e) => {
+                        println!("error adding jaslo reaction: {}", e);
                     }
                 }
             }

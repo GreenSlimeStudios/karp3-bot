@@ -1,6 +1,9 @@
 pub fn get_drip_list() -> Vec<String> {
     vec!["drip".to_string(), "cock".to_string(), "kogut".to_string()]
 }
+pub fn get_thick_list() -> Vec<String> {
+    vec!["thick".to_string(), "grub".to_string(), "tłus".to_string()]
+}
 pub fn get_sus_list() -> Vec<String> {
     vec![
         "sus".to_string(),
@@ -9,6 +12,7 @@ pub fn get_sus_list() -> Vec<String> {
         "cum".to_string(),
         "strange".to_string(),
         "baka".to_string(),
+        "geoff".to_string(),
     ]
 }
 pub fn get_cat_list() -> Vec<String> {
