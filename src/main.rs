@@ -89,7 +89,7 @@ impl EventHandler for Handler {
             eprintln!("Couldn't write to file: {}", e);
         }
 
-        let cat = ReactionType::try_from("<:oo:1043040617388851251>").unwrap();
+        let cat = ReactionType::try_from("<:oo:1044950628549537882>").unwrap();
         let dripczak = ReactionType::try_from("<:dripczak:1026584223492096080>").unwrap();
         let _the_rock = ReactionType::try_from("<:the_rock:982328750240833536>").unwrap();
         let the_beans = ReactionType::try_from("<:the_beans:1009140627272900648>").unwrap();
