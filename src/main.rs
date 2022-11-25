@@ -94,6 +94,29 @@ impl EventHandler for Handler {
         let _the_rock = ReactionType::try_from("<:the_rock:982328750240833536>").unwrap();
         let the_beans = ReactionType::try_from("<:the_beans:1009140627272900648>").unwrap();
         let jaslo = ReactionType::try_from("<:jaslo:1044185772556812288>").unwrap();
+        let igor = ReactionType::try_from("<:igor:1045744129625292842>").unwrap();
+
+        if msg.is_own(&ctx) {
+            return;
+        }
+
+        if msg.content.to_lowercase().contains("cześć")
+            && msg.content.to_lowercase().contains("chłop")
+        {
+            match msg.react(&ctx, igor.clone()).await {
+                Ok(_v) => (),
+                Err(e) => {
+                    println!("error adding igor reaction: {}", e);
+                }
+            }
+            match msg
+                .reply(&ctx, "Cześć chłopczyku :leftwards_hand: :smirk:")
+                .await
+            {
+                Ok(_) => (),
+                Err(_) => (),
+            }
+        }
 
         for word in get_sus_list() {
             if msg

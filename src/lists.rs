@@ -25,5 +25,12 @@ pub fn get_cat_list() -> Vec<String> {
         "cute".to_string(),
         "strus".to_string(),
         "struś".to_string(),
+        "kit".to_string(),
     ]
+}
+pub fn _get_igor_list() -> (Vec<String>, Vec<String>) {
+    (
+        vec!["cześć".to_string(), "czesc".to_string()],
+        vec!["chłop".to_string()],
+    )
 }
