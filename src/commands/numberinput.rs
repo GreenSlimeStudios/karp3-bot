@@ -11,9 +11,9 @@ pub fn register(
         .create_option(|option| {
             option
                 .name("int")
-                .description("An integer from 5 to 10")
+                .description("An integer from 3 to 10")
                 .kind(CommandOptionType::Integer)
-                .min_int_value(5)
+                .min_int_value(3)
                 .max_int_value(10)
                 .required(true)
         })

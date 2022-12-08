@@ -13,18 +13,13 @@ use rand::Rng;
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::{CommandResult, StandardFramework};
-// use serenity::futures::TryFutureExt;
-// use serenity::http::CacheHttp;
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
-use search_with_google::search;
-
-// use serenity::model::application::command::Command;
-// use serenity::prelude::*;
+use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 #[group]
 #[commands(
@@ -35,7 +30,9 @@ use search_with_google::search;
     calculate27,
     calculate_verbose,
     bongal,
-    decimal
+    decimal,
+    tr,
+    ksearch
 )]
 struct General;
 
@@ -110,7 +107,10 @@ impl EventHandler for Handler {
                 }
             }
             match msg
-                .reply(&ctx, "Cześć chłopczyku :leftwards_hand: :smirk:")
+                .reply(
+                    &ctx,
+                    "<:igor:1045744129625292842> Cześć chłopczyku :leftwards_hand: :smirk:",
+                )
                 .await
             {
                 Ok(_) => (),
@@ -224,7 +224,6 @@ impl EventHandler for Handler {
                 "rock" => commands::yum::run(&command.data.options),
                 "numberinput" => commands::numberinput::run(&command.data.options),
                 "karp-search" => commands::karp_search::run(&command.data.options).await,
-                // "karp-search" => search("rust", 3, None).await.unwrap().len().to_string(),
                 _ => "not implemented :(".to_string(),
             };
 
@@ -243,14 +242,6 @@ impl EventHandler for Handler {
             }
         }
     }
-}
-
-async fn get_result_len() -> String {
-    let results = search("rust", 3, None).await.unwrap();
-    return results.len().to_string();
-    // Should return results of links and titles.
-    // println!("karp results! {:?}", results);
-    // return "sus".to_string();
 }
 
 #[tokio::main]
@@ -280,6 +271,50 @@ async fn main() {
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
+
+    Ok(())
+}
+#[command]
+async fn tr(ctx: &Context, msg: &Message) -> CommandResult {
+    // let user: User = User::from(UserId(2000));
+    msg.reply(ctx, msg.author.avatar_url().unwrap()).await?;
+
+    Ok(())
+}
+#[command]
+async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
+    let parameters: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    let mut q: String = String::new();
+    for i in 0..(parameters.len() - 1) {
+        q += parameters[i + 1];
+    }
+    let api_key: String =
+        std::fs::read_to_string("search_token.txt").expect("The file could not be read");
+
+    let mut params = std::collections::HashMap::<String, String>::new();
+    params.insert("q".to_string(), q);
+    params.insert("location".to_string(), "United States,Poland".to_string());
+
+    let search = SerpApiSearch::google(params, api_key);
+
+    let results = search.json().await.unwrap();
+    let organic_results = results["organic_results"].as_array().unwrap();
+    let mut message: String = String::new();
+
+    for i in 0..parameters
+        .first()
+        .unwrap()
+        .parse::<usize>()
+        .unwrap()
+        .to_string()
+        .parse::<usize>()
+        .unwrap()
+    {
+        message += organic_results[i]["link"].clone().to_string().as_str();
+    }
+
+    msg.reply(&ctx, message.replace("\"\"", "\n").replace("\"", "").trim())
+        .await?;
 
     Ok(())
 }

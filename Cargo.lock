@@ -131,6 +131,7 @@ dependencies = [
  "reqwest 0.11.11",
  "search_with_google",
  "serenity",
+ "serpapi-search-rust",
  "tokio 1.21.1",
 ]
 
@@ -1710,6 +1711,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serpapi-search-rust"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46af25d4844dbb022004fd5f40f275b7ef9b89a5f0d8aaa03a4a446a81befa2d"
+dependencies = [
+ "reqwest 0.11.11",
+ "serde_json",
+ "tokio 1.21.1",
+]
+
+[[package]]
 name = "servo_arc"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1728,6 +1740,15 @@ dependencies = [
  "cfg-if 1.0.0",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "signal-hook-registry"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -1946,7 +1967,9 @@ dependencies = [
  "mio 0.8.4",
  "num_cpus",
  "once_cell",
+ "parking_lot",
  "pin-project-lite 0.2.9",
+ "signal-hook-registry",
  "socket2 0.4.7",
  "tokio-macros",
  "winapi 0.3.9",
