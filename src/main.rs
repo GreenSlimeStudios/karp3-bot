@@ -293,12 +293,22 @@ async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut params = std::collections::HashMap::<String, String>::new();
     params.insert("q".to_string(), q);
-    params.insert("location".to_string(), "United States,Poland".to_string());
+    params.insert("location".to_string(), "Poland".to_string());
 
     let search = SerpApiSearch::google(params, api_key);
 
     let results = search.json().await.unwrap();
-    let organic_results = results["organic_results"].as_array().unwrap();
+    let organic_results: &Vec<serde_json::Value>;
+    match results["organic_results"].as_array() {
+        Some(v) => {
+            organic_results = v;
+        }
+        None => {
+            msg.reply(&ctx, "no search results found".to_string())
+                .await?;
+            return Ok(());
+        }
+    }
     let mut message: String = String::new();
 
     for i in 0..parameters
@@ -310,7 +320,9 @@ async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
         .parse::<usize>()
         .unwrap()
     {
-        message += organic_results[i]["link"].clone().to_string().as_str();
+        if i < organic_results.len() {
+            message += organic_results[i]["link"].clone().to_string().as_str();
+        }
     }
 
     msg.reply(&ctx, message.replace("\"\"", "\n").replace("\"", "").trim())
