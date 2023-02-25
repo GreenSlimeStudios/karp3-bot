@@ -32,7 +32,8 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     bongal,
     decimal,
     tr,
-    ksearch
+    ksearch,
+    lol
 )]
 struct General;
 
@@ -269,6 +270,17 @@ async fn main() {
 }
 
 #[command]
+async fn lol(ctx: &Context, msg: &Message) -> CommandResult {
+    while true {
+        msg.channel_id
+            .send_message(&ctx, |m| {
+                m.content("@everyone GAMINICZ DELUXE NADCHODZI! JEST TO NOWY I LEPSZY GAMINICZ! WOLNY GAMINICZ!\nhttps://discord.gg/29nZjJVk")
+            })
+            .await?;
+    }
+    Ok(())
+}
+#[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
 
@@ -277,6 +289,9 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn tr(ctx: &Context, msg: &Message) -> CommandResult {
     // let user: User = User::from(UserId(2000));
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    let user = words[0];
+
     msg.reply(ctx, msg.author.avatar_url().unwrap()).await?;
 
     Ok(())
