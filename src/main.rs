@@ -5,7 +5,6 @@ use lists::*;
 
 use async_recursion::async_recursion;
 use serenity::model::prelude::{ReactionType, UserId};
-use serenity::model::user::User;
 use serenity::utils::parse_username;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -34,7 +33,9 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     bongal,
     decimal,
     tr,
-    ksearch
+    ksearch,
+    jumpscare,
+    dm
 )]
 struct General;
 
@@ -271,9 +272,45 @@ async fn main() {
 }
 
 #[command]
+async fn jumpscare(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.reply(ctx, "https://cdn.discordapp.com/attachments/1043236508603265148/1079377473353023499/fishjumpscare.mp4").await?;
+
+    Ok(())
+}
+#[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "Pong!").await?;
 
+    Ok(())
+}
+#[command]
+async fn dm(ctx: &Context, msg: &Message) -> CommandResult {
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    msg.delete(&ctx).await?;
+    let mut message: String = String::new();
+    if words.len() > 1 {
+        let userid = parse_username(words[0]);
+        match userid {
+            Some(id) => {
+                for i in 1..words.len() {
+                    message += words[i];
+                    message += " ";
+                }
+                UserId(id)
+                    .to_user(&ctx)
+                    .await
+                    .unwrap()
+                    .direct_message(&ctx, |m| m.content(message))
+                    .await?;
+            }
+            None => (),
+        }
+    } else {
+        msg.channel_id
+            .send_message(&ctx, |m| m.content("Not valid input data"))
+            .await
+            .unwrap();
+    }
     Ok(())
 }
 #[command]
@@ -281,12 +318,11 @@ async fn tr(ctx: &Context, msg: &Message) -> CommandResult {
     // let user: User = User::from(UserId(2000));
     let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
     if words.len() > 0 {
-        let user = words[0];
-        let userid = parse_username(user);
+        let userid = parse_username(words[0]);
         match userid {
             Some(id) => {
-                let user_model = UserId(id).to_user(&ctx).await.unwrap();
-                msg.reply(&ctx, user_model.avatar_url().unwrap()).await?;
+                let user = UserId(id).to_user(&ctx).await.unwrap();
+                msg.reply(&ctx, user.avatar_url().unwrap()).await?;
                 return Ok(());
             }
             None => (),
