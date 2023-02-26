@@ -289,21 +289,27 @@ async fn dm(ctx: &Context, msg: &Message) -> CommandResult {
     msg.delete(&ctx).await?;
     let mut message: String = String::new();
     if words.len() > 1 {
-        let userid = parse_username(words[0]);
-        match userid {
-            Some(id) => {
-                for i in 1..words.len() {
-                    message += words[i];
-                    message += " ";
-                }
-                UserId(id)
-                    .to_user(&ctx)
-                    .await
-                    .unwrap()
-                    .direct_message(&ctx, |m| m.content(message))
-                    .await?;
+        let userid: u64;
+        if words[0].starts_with("<@") {
+            userid = parse_username(words[0]).unwrap();
+        } else {
+            userid = words[0].parse::<u64>()?;
+        }
+        for i in 1..words.len() {
+            message += words[i];
+            message += " ";
+        }
+        let user = UserId(userid).to_user(&ctx).await;
+        match user {
+            Ok(user) => {
+                user.direct_message(&ctx, |m| m.content(message)).await?;
             }
-            None => (),
+            Err(e) => {
+                msg.channel_id
+                    .send_message(&ctx, |m| m.content(e))
+                    .await
+                    .unwrap();
+            }
         }
     } else {
         msg.channel_id
