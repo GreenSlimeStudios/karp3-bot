@@ -4,7 +4,11 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::{ReactionType, UserId};
+use serenity::cache::Settings;
+use serenity::client::Cache;
+// use serenity::model::Permissions;
+// use serenity::model::prelude::utils::presences;
+use serenity::model::prelude::{Presence, ReactionType, UserId};
 use serenity::utils::parse_username;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -13,13 +17,14 @@ use chrono;
 use rand::Rng;
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{CommandResult, StandardFramework};
+use serenity::framework::standard::{Args, CommandResult, StandardFramework};
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
+use serenity::model::permissions::Permissions;
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 #[group]
@@ -35,7 +40,9 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     tr,
     ksearch,
     jumpscare,
-    dm
+    dm,
+    activity,
+    aaa
 )]
 struct General;
 
@@ -51,7 +58,7 @@ impl EventHandler for Handler {
                 Some(v) => v,
                 None => {
                     // println!("error reading nickname");
-                    "None".to_string()
+                    msg.author.name.clone()
                 }
             };
             // Some lang actions
@@ -274,6 +281,68 @@ async fn main() {
 #[command]
 async fn jumpscare(ctx: &Context, msg: &Message) -> CommandResult {
     msg.reply(ctx, "https://cdn.discordapp.com/attachments/1043236508603265148/1079377473353023499/fishjumpscare.mp4").await?;
+
+    Ok(())
+}
+#[command]
+async fn activity(ctx: &Context, msg: &Message) -> CommandResult {
+    let guildid = msg.guild_id.unwrap();
+    let guild = guildid.to_guild_cached(&ctx).unwrap();
+    let presences = guild.presences;
+    for (id, presence) in presences {
+        if presence.activities.is_empty() {
+            continue;
+        }
+        let mut con = id.to_user(&ctx).await.unwrap().name + ": ";
+        for activity in presence.activities {
+            con += activity.name.as_str();
+            match activity.details {
+                Some(v) => {
+                    con += " (";
+                    con += v.as_str();
+                    con += ")";
+                }
+                None => (),
+            }
+            con += ", ";
+            if activity.name.to_lowercase() == "league of legends" {
+                match guildid.ban(&ctx, id, 0).await {
+                    Ok(_) => {
+                        let ban_message = "Banned ".to_string()
+                            + id.to_user(&ctx).await.unwrap().name.as_str()
+                            + " for playing Leauge Of Legends";
+                        msg.channel_id
+                            .send_message(&ctx, |m| m.content(ban_message))
+                            .await
+                            .unwrap();
+                    }
+                    Err(e) => {
+                        let ban_message = "Failed banning ".to_string()
+                            + id.to_user(&ctx).await.unwrap().name.as_str()
+                            + " for playing Leauge Of Legends {"
+                            + e.to_string().as_str()
+                            + "}";
+                        msg.channel_id
+                            .send_message(&ctx, |m| m.content(ban_message))
+                            .await
+                            .unwrap();
+                    }
+                };
+            }
+        }
+        msg.channel_id
+            .send_message(&ctx, |m| m.content(con))
+            .await
+            .unwrap();
+    }
+    Ok(())
+}
+#[command]
+async fn aaa(ctx: &Context, msg: &Message) -> CommandResult {
+    let guildid = msg.guild_id.unwrap();
+    let _role = guildid
+        .create_role(&ctx, |r| r.hoist(true).name("aaa"))
+        .await;
 
     Ok(())
 }
