@@ -4,14 +4,12 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::cache::Settings;
-use serenity::client::Cache;
-// use serenity::model::Permissions;
-// use serenity::model::prelude::utils::presences;
-use serenity::model::prelude::{Presence, ReactionType, UserId};
+use serenity::model::prelude::{ReactionType, UserId};
 use serenity::utils::parse_username;
+use songbird::SerenityInit;
 use std::fs::OpenOptions;
 use std::io::Write;
+use youtube_dl::YoutubeDl;
 
 use chrono;
 use rand::Rng;
@@ -24,7 +22,6 @@ use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
-use serenity::model::permissions::Permissions;
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 #[group]
@@ -42,7 +39,11 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     jumpscare,
     dm,
     activity,
-    aaa
+    aaa,
+    join,
+    leave,
+    play,
+    play2
 )]
 struct General;
 
@@ -256,6 +257,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
     let framework = StandardFramework::default()
         .configure(|c| c.prefix("$")) // set the bot's prefix to "~"
         .group(&GENERAL_GROUP);
@@ -268,6 +270,7 @@ async fn main() {
     let mut client = Client::builder(token, intents)
         .event_handler(Handler)
         .framework(framework)
+        .register_songbird()
         .await
         .expect("Error creating client");
 
@@ -1045,4 +1048,180 @@ fn from_bongal(bongal: String) -> Option<f64> {
         result *= -1.0;
     }
     return Some(result);
+}
+
+#[command]
+#[only_in(guilds)]
+async fn join(ctx: &Context, msg: &Message) -> CommandResult {
+    let guild = msg.guild(&ctx.cache).unwrap();
+    let guild_id = guild.id;
+
+    let channel_id = guild
+        .voice_states
+        .get(&msg.author.id)
+        .and_then(|voice_state| voice_state.channel_id);
+
+    let connect_to = match channel_id {
+        Some(channel) => channel,
+        None => {
+            msg.reply(ctx, "Not in a voice channel").await?;
+
+            return Ok(());
+        }
+    };
+
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+
+    let _handler = manager.join(guild_id, connect_to).await;
+
+    Ok(())
+}
+#[command]
+#[only_in(guilds)]
+async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
+    let guild = msg.guild(&ctx.cache).unwrap();
+    let guild_id = guild.id;
+
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+    let has_handler = manager.get(guild_id).is_some();
+
+    if has_handler {
+        if let Err(e) = manager.remove(guild_id).await {
+            msg.channel_id
+                .say(&ctx.http, format!("Failed: {:?}", e))
+                .await?;
+        }
+
+        msg.channel_id.say(&ctx.http, "Left voice channel").await?;
+    } else {
+        msg.reply(ctx, "Not in a voice channel").await?;
+    }
+
+    Ok(())
+}
+
+#[command]
+#[only_in(guilds)]
+async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let url = match args.single::<String>() {
+        Ok(url) => url,
+        Err(_) => {
+            msg.channel_id
+                .say(&ctx.http, "Must provide a URL to a video or audio")
+                .await?;
+            return Ok(());
+        }
+    };
+
+    if !url.starts_with("http") {
+        msg.channel_id
+            .say(&ctx.http, "Must provide a valid URL")
+            .await?;
+        return Ok(());
+    }
+
+    let guild = msg.guild(&ctx.cache).unwrap();
+    let guild_id = guild.id;
+
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+
+    if let Some(handler_lock) = manager.get(guild_id) {
+        let mut handler = handler_lock.lock().await;
+
+        let source = match songbird::ytdl(&url).await {
+            Ok(source) => source,
+            Err(why) => {
+                println!("Err starting source: {:?}", why);
+
+                msg.channel_id
+                    .say(&ctx.http, "Error sourcing ffmpeg")
+                    .await?;
+
+                return Ok(());
+            }
+        };
+
+        handler.play_source(source);
+
+        msg.channel_id.say(&ctx.http, "Playing song").await?;
+    } else {
+        msg.channel_id
+            .say(&ctx.http, "Not in a voice channel to play in")
+            .await?;
+    }
+
+    Ok(())
+}
+
+#[command]
+#[only_in(guilds)]
+async fn play2(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let url = match args.single::<String>() {
+        Ok(url) => url,
+        Err(_) => {
+            msg.channel_id
+                .say(&ctx.http, "Must provide a URL to a video or audio")
+                .await?;
+            return Ok(());
+        }
+    };
+
+    let output = YoutubeDl::new(url)
+        .extract_audio(true)
+        .socket_timeout("15")
+        .run()
+        .unwrap();
+    let out = output.into_single_video().unwrap();
+    let url: String = out.url.unwrap();
+
+    if !url.starts_with("http") {
+        msg.channel_id
+            .say(&ctx.http, "Must provide a valid URL")
+            .await?;
+        return Ok(());
+    }
+
+    let guild = msg.guild(&ctx.cache).unwrap();
+    let guild_id = guild.id;
+
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+
+    if let Some(handler_lock) = manager.get(guild_id) {
+        let mut handler = handler_lock.lock().await;
+
+        let source = match songbird::ytdl(&url).await {
+            Ok(source) => source,
+            Err(why) => {
+                println!("Err starting source: {:?}", why);
+
+                msg.channel_id
+                    .say(&ctx.http, "Error sourcing ffmpeg")
+                    .await?;
+
+                return Ok(());
+            }
+        };
+
+        handler.play_source(source);
+
+        msg.channel_id.say(&ctx.http, "Playing song").await?;
+    } else {
+        msg.channel_id
+            .say(&ctx.http, "Not in a voice channel to play in")
+            .await?;
+    }
+
+    Ok(())
 }
