@@ -1227,7 +1227,7 @@ async fn play2_fn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 
         handler.play_source(source);
 
-        msg.channel_id.say(&ctx.http, "Playing song").await?;
+        msg.channel_id.say(&ctx.http, "gut").await?;
     } else {
         msg.channel_id
             .say(&ctx.http, "Not in a voice channel to play in")
@@ -1243,8 +1243,8 @@ async fn ryndyndyn(ctx: &Context, msg: &Message) -> CommandResult {
         &ctx,
         &msg,
         Args::new(
-            "https://rr8---sn-u2oxu-f5fr.googlevideo.com/videoplayback?expire=1679504979&ei=8-EaZJnwMc7U7gSCuo6IAg&ip=2a01%3A113f%3A440e%3Ad200%3A1f0a%3Ae310%3A278d%3A1715&id=o-AN7KwJsn38bjL21XYqJRBNdyUID9Xna8-tT9XZGrClJ2&itag=140&source=youtube&requiressl=yes&mh=5Y&mm=31%2C26&mn=sn-u2oxu-f5fr%2Csn-4g5edndz&ms=au%2Conr&mv=m&mvi=8&pl=34&gcr=pl&initcwndbps=1366250&vprv=1&mime=audio%2Fmp4&ns=7fN7qYwoDNw4aNiiofnNA8IM&gir=yes&clen=2602180&dur=160.670&lmt=1662365106396473&mt=1679482863&fvip=1&keepalive=yes&fexp=24007246&c=WEB&txp=2318224&n=a1tLqhWxlufX35X93WbW&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cgcr%2Cvprv%2Cmime%2Cns%2Cgir%2Cclen%2Cdur%2Clmt&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps&lsig=AG3C_xAwRAIgLwmwpQSpD3utsLfNC9t2YP6ZsRW6HCKHIHQJwP2_JnMCIE-F6atOrDEEAPICGWBsM87ER2vFqFWCKiB8SmawWn5g&sig=AOq0QJ8wRgIhAOUbBrv9O0skFA-oj9ktjQco27S45EIc9giRxKeLhjOqAiEAouHUbfrY-5Xl6d3w8AYUDytoYl7wF3oNBJ9zdKqREgc=",
-            // "https://www.youtube.com/watch?v=EgAOqt8I5ac",
+            // "https://rr8---sn-u2oxu-f5fr.googlevideo.com/videoplayback?expire=1679504979&ei=8-EaZJnwMc7U7gSCuo6IAg&ip=2a01%3A113f%3A440e%3Ad200%3A1f0a%3Ae310%3A278d%3A1715&id=o-AN7KwJsn38bjL21XYqJRBNdyUID9Xna8-tT9XZGrClJ2&itag=140&source=youtube&requiressl=yes&mh=5Y&mm=31%2C26&mn=sn-u2oxu-f5fr%2Csn-4g5edndz&ms=au%2Conr&mv=m&mvi=8&pl=34&gcr=pl&initcwndbps=1366250&vprv=1&mime=audio%2Fmp4&ns=7fN7qYwoDNw4aNiiofnNA8IM&gir=yes&clen=2602180&dur=160.670&lmt=1662365106396473&mt=1679482863&fvip=1&keepalive=yes&fexp=24007246&c=WEB&txp=2318224&n=a1tLqhWxlufX35X93WbW&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cgcr%2Cvprv%2Cmime%2Cns%2Cgir%2Cclen%2Cdur%2Clmt&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps&lsig=AG3C_xAwRAIgLwmwpQSpD3utsLfNC9t2YP6ZsRW6HCKHIHQJwP2_JnMCIE-F6atOrDEEAPICGWBsM87ER2vFqFWCKiB8SmawWn5g&sig=AOq0QJ8wRgIhAOUbBrv9O0skFA-oj9ktjQco27S45EIc9giRxKeLhjOqAiEAouHUbfrY-5Xl6d3w8AYUDytoYl7wF3oNBJ9zdKqREgc=",
+            "https://www.youtube.com/watch?v=EgAOqt8I5ac",
             &[Delimiter::Single(' ')],
         ),
     )
