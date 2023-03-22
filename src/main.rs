@@ -15,7 +15,7 @@ use chrono;
 use rand::Rng;
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{Args, CommandResult, StandardFramework};
+use serenity::framework::standard::{Args, CommandResult, Delimiter, StandardFramework};
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
@@ -43,7 +43,8 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     join,
     leave,
     play,
-    play2
+    play2,
+    ryndyndyn
 )]
 struct General;
 
@@ -1053,6 +1054,9 @@ fn from_bongal(bongal: String) -> Option<f64> {
 #[command]
 #[only_in(guilds)]
 async fn join(ctx: &Context, msg: &Message) -> CommandResult {
+    join_fn(&ctx, &msg).await
+}
+async fn join_fn(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(&ctx.cache).unwrap();
     let guild_id = guild.id;
 
@@ -1079,6 +1083,7 @@ async fn join(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+
 #[command]
 #[only_in(guilds)]
 async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
@@ -1165,6 +1170,9 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 #[command]
 #[only_in(guilds)]
 async fn play2(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    play2_fn(&ctx, &msg, args).await
+}
+async fn play2_fn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
@@ -1224,4 +1232,17 @@ async fn play2(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     Ok(())
+}
+#[command]
+async fn ryndyndyn(ctx: &Context, msg: &Message) -> CommandResult {
+    join_fn(&ctx, &msg).await?;
+    play2_fn(
+        &ctx,
+        &msg,
+        Args::new(
+            "https://www.youtube.com/watch?v=EgAOqt8I5ac",
+            &[Delimiter::Single(' ')],
+        ),
+    )
+    .await
 }
