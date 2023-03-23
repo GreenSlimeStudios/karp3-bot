@@ -1189,7 +1189,6 @@ async fn play2_fn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
     };
     let mut cmd = Command::new("yt-dlp");
     cmd.arg("--get-url");
-    cmd.arg("--audio-quality 0");
     cmd.arg("-f 140");
     cmd.arg(url);
     let url: String;
