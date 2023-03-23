@@ -9,6 +9,7 @@ use serenity::utils::parse_username;
 use songbird::SerenityInit;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::process::Command;
 use youtube_dl::YoutubeDl;
 
 use chrono;
@@ -1185,14 +1186,22 @@ async fn play2_fn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
             return Ok(());
         }
     };
-
-    let output = YoutubeDl::new(url)
-        .extract_audio(true)
-        .socket_timeout("15")
-        .run()
-        .unwrap();
-    let out = output.into_single_video().unwrap();
-    let url: String = out.url.unwrap();
+    let mut cmd = Command::new("yt-dlp");
+    cmd.arg("--get-url");
+    cmd.arg("-f 140");
+    cmd.arg(url);
+    let url: String;
+    match cmd.output() {
+        Ok(o) => {
+            url = String::from_utf8(o.stdout).unwrap().trim().to_string();
+            // println!("{}", String::from_utf8_unchecked(o.stdout));
+        }
+        Err(e) => {
+            println!("error: {e}");
+            url = "".to_string();
+        }
+    }
+    println!("{url}");
 
     if !url.starts_with("http") {
         msg.channel_id
