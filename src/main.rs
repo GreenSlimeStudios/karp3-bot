@@ -10,7 +10,6 @@ use songbird::SerenityInit;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::process::Command;
-use youtube_dl::YoutubeDl;
 
 use chrono;
 use rand::Rng;
@@ -45,6 +44,7 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     leave,
     play,
     play2,
+    stop,
     ryndyndyn
 )]
 struct General;
@@ -1258,4 +1258,16 @@ async fn ryndyndyn(ctx: &Context, msg: &Message) -> CommandResult {
         ),
     )
     .await
+}
+#[command]
+async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+    if let Some(handler_lock) = manager.get(msg.guild_id.unwrap()) {
+        let mut handler = handler_lock.lock().await;
+        handler.stop();
+    }
+    Ok(())
 }
