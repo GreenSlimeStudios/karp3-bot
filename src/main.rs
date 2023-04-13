@@ -45,7 +45,8 @@ use serpapi_search_rust::serp_api_search::SerpApiSearch;
     play,
     play2,
     stop,
-    ryndyndyn
+    ryndyndyn,
+    is_deafned
 )]
 struct General;
 
@@ -1268,6 +1269,18 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
     if let Some(handler_lock) = manager.get(msg.guild_id.unwrap()) {
         let mut handler = handler_lock.lock().await;
         handler.stop();
+    }
+    Ok(())
+}
+#[command]
+async fn is_deafned(ctx: &Context, msg: &Message) -> CommandResult {
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Songbird Voice client placed in at initialisation.")
+        .clone();
+    if let Some(handler_lock) = manager.get(msg.guild_id.unwrap()) {
+        let mut handler = handler_lock.lock().await;
+        msg.reply(&ctx, handler.is_deaf()).await?;
     }
     Ok(())
 }
