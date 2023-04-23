@@ -24,10 +24,13 @@ use serenity::prelude::*;
 
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
+mod user;
+use user::DcUser;
+
 #[group]
 #[commands(
     ping,
-    dekarpdelaspecial,
+    // dekarpdelaspecial,
     meme,
     calculate,
     calculate27,
@@ -410,6 +413,7 @@ async fn tr(ctx: &Context, msg: &Message) -> CommandResult {
         }
     }
     msg.reply(ctx, msg.author.avatar_url().unwrap()).await?;
+    
 
     Ok(())
 }
@@ -1284,3 +1288,6 @@ async fn is_deafned(ctx: &Context, msg: &Message) -> CommandResult {
     }
     Ok(())
 }
+
+
+
