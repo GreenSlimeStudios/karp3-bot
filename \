@@ -25,7 +25,7 @@ use serenity::prelude::*;
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 mod user;
-use user::DcUser;
+use user::DcUser::*;
 
 #[group]
 #[commands(
@@ -49,8 +49,7 @@ use user::DcUser;
     play2,
     stop,
     ryndyndyn,
-    is_deafned,
-    moc,
+    is_deafned
 )]
 struct General;
 
@@ -206,19 +205,6 @@ impl EventHandler for Handler {
                 }
             }
         }
-
-        
-        let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-        let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
-        let id:String = msg.author.id.as_u64().to_string();
-        println!("id: {id}");
-        let mut dcuser:DcUser = DcUser::new(id);
-        dcuser.get_user_data_or_create_user(&pool).await;
-        
-        dcuser.power += 1;
-        dcuser.update_user(&pool).await;        
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("{} is connected!", _ready.user.name);
@@ -1297,25 +1283,11 @@ async fn is_deafned(ctx: &Context, msg: &Message) -> CommandResult {
         .expect("Songbird Voice client placed in at initialisation.")
         .clone();
     if let Some(handler_lock) = manager.get(msg.guild_id.unwrap()) {
-        let handler = handler_lock.lock().await;
+        let mut handler = handler_lock.lock().await;
         msg.reply(&ctx, handler.is_deaf()).await?;
     }
     Ok(())
 }
 
 
-#[command]
-async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
-    let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-    let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
-    let id:String = msg.author.id.as_u64().to_string();
-    println!("id: {id}");
-    let mut dcuser:DcUser = DcUser::new(id);
-    dcuser.get_user_data_or_create_user(&pool).await;
-    
-    msg.reply(&ctx, "posiadasz ".to_string()+dcuser.power.to_string().as_str()+ " milionów mocy").await?;
-    
-    Ok(())
-}
