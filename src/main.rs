@@ -21,6 +21,7 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
+use chrono::{Utc,Duration};
 
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
@@ -53,6 +54,7 @@ use user::DcUser;
     is_deafned,
     moc,
     huj,
+    russian_roulette,
 )]
 struct General;
 
@@ -1338,6 +1340,26 @@ async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+#[command]
+async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
+    let members = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap();
+    let num = rand::thread_rng().gen_range(0..6) as u8;
+    
+    if num == 5{
+        msg.reply(&ctx, "You hit the jackpot! <:bronnie:1088395064440533012>").await?;
+
+        let now = Utc::now();
+        let time: String = (now + Duration::hours(24)).to_rfc3339();
+        members.into_iter().find(|x|x.user.id.as_u64() == msg.author.id.as_u64()).unwrap().edit(&ctx, |m|{m.disable_communication_until(time)}).await?;
+        // msg.guild_id.unwrap().ban
+    }
+    else{
+        msg.reply(&ctx, "nothing happned...").await?;
+    }
+
+    Ok(())
+}
+
 
 #[command]
 async fn help(ctx: &Context, msg: &Message) -> CommandResult {
@@ -1369,6 +1391,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("ryndyndyn", "bad piggies theme song intensifies", false)
             .field("moc", "returns your current power level", false)
             .field("huj", "pings a random member of the server", false)
+            .field("russian_roulette", "you have a 1/6 chance to be muted for 24h", false)
         )
     }).await?;
 
