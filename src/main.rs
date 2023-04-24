@@ -52,6 +52,7 @@ use user::DcUser;
     ryndyndyn,
     is_deafned,
     moc,
+    huj,
 )]
 struct General;
 
@@ -1330,6 +1331,15 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
+    let members = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap();
+    let num = rand::thread_rng().gen_range(0..members.len());
+    msg.channel_id.send_message(&ctx, |m|{m.content(format!("<@{}>",members[num].user.id.as_u64()))}).await?;
+
+    Ok(())
+}
+
+#[command]
 async fn help(ctx: &Context, msg: &Message) -> CommandResult {
     let url = UserId(1020723547875840030).to_user(&ctx).await.unwrap().avatar_url().unwrap();
     msg.channel_id.send_message(&ctx.http, |m| {
@@ -1358,6 +1368,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("play2 <url>", "plays the audio from an url that leads to a youtube video", false)
             .field("ryndyndyn", "bad piggies theme song intensifies", false)
             .field("moc", "returns your current power level", false)
+            .field("huj", "pings a random member of the server", false)
         )
     }).await?;
 
