@@ -31,6 +31,7 @@ use user::DcUser;
 #[commands(
     ping,
     // dekarpdelaspecial,
+    help,
     meme,
     calculate,
     calculate27,
@@ -218,7 +219,9 @@ impl EventHandler for Handler {
         dcuser.get_user_data_or_create_user(&pool).await;
         
         dcuser.power += 1;
-        dcuser.update_user(&pool).await;        
+        dcuser.update_user(&pool).await;
+
+
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("{} is connected!", _ready.user.name);
@@ -277,6 +280,11 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+
+    // let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    // let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
+    // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+
     tracing_subscriber::fmt::init();
     let framework = StandardFramework::default()
         .configure(|c| c.prefix("$")) // set the bot's prefix to "~"
@@ -449,6 +457,7 @@ async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
 
     let results = search.json().await.unwrap();
     let organic_results: &Vec<serde_json::Value>;
+    
     match results["organic_results"].as_array() {
         Some(v) => {
             organic_results = v;
@@ -1315,7 +1324,42 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
     let mut dcuser:DcUser = DcUser::new(id);
     dcuser.get_user_data_or_create_user(&pool).await;
     
-    msg.reply(&ctx, "posiadasz ".to_string()+dcuser.power.to_string().as_str()+ " milionów mocy").await?;
+    msg.reply(&ctx, "masz ".to_string()+dcuser.power.to_string().as_str()+ " milionów mocy").await?;
     
+    Ok(())
+}
+
+#[command]
+async fn help(ctx: &Context, msg: &Message) -> CommandResult {
+    let url = UserId(1020723547875840030).to_user(&ctx).await.unwrap().avatar_url().unwrap();
+    msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| e
+            .colour(0x00ff00)
+            // .thumbnail(profile.avatar.clone())
+            .thumbnail(url)
+            .url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            .title(format!("Help from glorious karp"))
+            .field("ping", "check if karp is alive", false)
+            .field("help", "displays this command", false)
+            .field("calculate <expression>", "calculates de thing in decimal values. Put space between every character exept for numbers", false)
+            .field("calculate27 <expression>", "calculates de thing in bongal values. Put space between every character exept for numbers", false)
+            .field("calculate_verbose <expression>", "same as calculate command but documents every step of the process", false)
+            .field("bongal <decimal>", "converts decimal value into bongal value", false)
+            .field("decimal <bongal>", "converts bongal value into decimal value", false)
+            .field("tr [@user]", "returns the profile picture of you or the person specified", false)
+            .field("ksearch <result count> <query>", "searches the web", false)
+            .field("jumpscare", "jumpscare", false)
+            .field("dm <@user> <message>", "sends an annonymous message to the person specified", false)
+            .field("activity", "returns the activities of people in the server", false)
+            .field("join", "joins the vc channel you are in", false)
+            .field("leave", "leaves all vc channels on the server", false)
+            .field("stop", "stops playing any current audio", false)
+            .field("play <url>", "plays the audio from an url that leads to an audio file", false)
+            .field("play2 <url>", "plays the audio from an url that leads to a youtube video", false)
+            .field("ryndyndyn", "bad piggies theme song intensifies", false)
+            .field("moc", "returns your current power level", false)
+        )
+    }).await?;
+
     Ok(())
 }
