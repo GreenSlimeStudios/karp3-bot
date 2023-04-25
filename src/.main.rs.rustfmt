@@ -4,7 +4,7 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::{Member, ReactionType, UserId};
+use serenity::model::prelude::{ReactionType, UserId, Member};
 use serenity::utils::parse_username;
 use songbird::SerenityInit;
 use std::fs::OpenOptions;
@@ -12,7 +12,6 @@ use std::io::Write;
 use std::process::Command;
 
 use chrono;
-use chrono::{Duration, Utc};
 use rand::Rng;
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group};
@@ -22,6 +21,7 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
+use chrono::{Utc,Duration};
 
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
@@ -211,17 +211,20 @@ impl EventHandler for Handler {
             }
         }
 
-        let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+        
+        let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
         let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
         // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
-        let id: String = msg.author.id.as_u64().to_string();
+        let id:String = msg.author.id.as_u64().to_string();
         println!("id: {id}");
-        let mut dcuser: DcUser = DcUser::new(id);
+        let mut dcuser:DcUser = DcUser::new(id);
         dcuser.get_user_data_or_create_user(&pool).await;
-
+        
         dcuser.power += 1;
         dcuser.update_user(&pool).await;
+
+
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("{} is connected!", _ready.user.name);
@@ -280,6 +283,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+
     // let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
     // let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
     // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
@@ -434,6 +438,7 @@ async fn tr(ctx: &Context, msg: &Message) -> CommandResult {
         }
     }
     msg.reply(ctx, msg.author.avatar_url().unwrap()).await?;
+    
 
     Ok(())
 }
@@ -455,7 +460,7 @@ async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
 
     let results = search.json().await.unwrap();
     let organic_results: &Vec<serde_json::Value>;
-
+    
     match results["organic_results"].as_array() {
         Some(v) => {
             organic_results = v;
@@ -1310,96 +1315,67 @@ async fn is_deafned(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+
 #[command]
 async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
-    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
     let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-    // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
-    let id: String = msg.author.id.as_u64().to_string();
+    let id:String = msg.author.id.as_u64().to_string();
     println!("id: {id}");
-    let mut dcuser: DcUser = DcUser::new(id);
+    let mut dcuser:DcUser = DcUser::new(id);
     dcuser.get_user_data_or_create_user(&pool).await;
-
-    msg.reply(
-        &ctx,
-        "masz ".to_string() + dcuser.power.to_string().as_str() + " milionów mocy",
-    )
-    .await?;
-
+    
+    msg.reply(&ctx, "masz ".to_string()+dcuser.power.to_string().as_str()+ " milionów mocy").await?;
+    
     Ok(())
 }
 
 #[command]
 async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
-    let members: Vec<Member> = msg
-        .guild_id
-        .unwrap()
-        .members(&ctx, Some(1000), None)
-        .await
-        .unwrap()
-        .into_iter()
-        .filter(|m| m.user.bot == false)
-        .collect();
+    let members:Vec<Member> = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap().into_iter().filter(|m|m.user.bot==false).collect();
     let num = rand::thread_rng().gen_range(0..members.len());
-    msg.channel_id
-        .send_message(&ctx, |m| {
-            m.content(format!("<@{}>", members[num].user.id.as_u64()))
-        })
-        .await?;
+    msg.channel_id.send_message(&ctx, |m|{m.content(format!("<@{}>",members[num].user.id.as_u64()))}).await?;
 
     Ok(())
 }
 #[command]
 async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
-    let members = msg
-        .guild_id
-        .unwrap()
-        .members(&ctx, Some(1000), None)
-        .await
-        .unwrap();
+    let members = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap();
     let num = rand::thread_rng().gen_range(0..6) as u8;
-
-    if num == 5 {
-        msg.reply(&ctx, "You hit the jackpot! <:bronnie:1088395064440533012>")
-            .await?;
+    
+    if num == 5{
+        msg.reply(&ctx, "You hit the jackpot! <:bronnie:1088395064440533012>").await?;
 
         let now = Utc::now();
         let time: String = (now + Duration::hours(24)).to_rfc3339();
-        members
-            .into_iter()
-            .find(|x| x.user.id.as_u64() == msg.author.id.as_u64())
-            .unwrap()
-            .edit(&ctx, |m| m.disable_communication_until(time))
-            .await?;
+        members.into_iter().find(|x|x.user.id.as_u64() == msg.author.id.as_u64()).unwrap().edit(&ctx, |m|{m.disable_communication_until(time)}).await?;
         // msg.guild_id.unwrap().ban
-    } else {
+    }
+    else{
         msg.reply(&ctx, "nothing happned...").await?;
     }
+        let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+        let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
+        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
-    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-    let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-    // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+        let id:String = msg.author.id.as_u64().to_string();
+        println!("id: {id}");
+        let mut dcuser:DcUser = DcUser::new(id);
+        dcuser.get_user_data_or_create_user(&pool).await;
+        
+        dcuser.power += 1;
+        dcuser.update_user(&pool).await;
 
-    let id: String = msg.author.id.as_u64().to_string();
-    println!("id: {id}");
-    let mut dcuser: DcUser = DcUser::new(id);
-    dcuser.get_user_data_or_create_user(&pool).await;
-
-    dcuser.power += 25;
-    dcuser.update_user(&pool).await;
 
     Ok(())
 }
 
+
 #[command]
 async fn help(ctx: &Context, msg: &Message) -> CommandResult {
-    let url = UserId(1020723547875840030)
-        .to_user(&ctx)
-        .await
-        .unwrap()
-        .avatar_url()
-        .unwrap();
+    let url = UserId(1020723547875840030).to_user(&ctx).await.unwrap().avatar_url().unwrap();
     msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| e
             .colour(0x00ff00)
@@ -1427,7 +1403,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("ryndyndyn", "bad piggies theme song intensifies", false)
             .field("moc", "returns your current power level", false)
             .field("huj", "pings a random member of the server", false)
-            .field("russian_roulette", "you have a 1/6 chance to be muted for 24h, adds 25 power", false)
+            .field("russian_roulette", "you have a 1/6 chance to be muted for 24h", false)
         )
     }).await?;
 
