@@ -4,7 +4,7 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::{ReactionType, UserId};
+use serenity::model::prelude::{ReactionType, UserId, Member};
 use serenity::utils::parse_username;
 use songbird::SerenityInit;
 use std::fs::OpenOptions;
@@ -1334,7 +1334,7 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
-    let members = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap();
+    let members:Vec<Member> = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap().into_iter().filter(|m|m.user.bot==false).collect();
     let num = rand::thread_rng().gen_range(0..members.len());
     msg.channel_id.send_message(&ctx, |m|{m.content(format!("<@{}>",members[num].user.id.as_u64()))}).await?;
 
