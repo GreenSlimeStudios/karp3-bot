@@ -39,7 +39,6 @@ use user::DcUser;
     calculate_verbose,
     bongal,
     decimal,
-    tr,
     ksearch,
     jumpscare,
     dm,
@@ -1315,8 +1314,27 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
     let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
     let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
     // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    
+    // let id: String = msg.author.id.as_u64().to_string();
+    let id:String;
+    
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    if words.len() > 0 {
+        let userid = parse_username(words[0]);
+        match userid {
+            Some(uid) => {
+                id=uid.to_string(); 
+            },
+            None => {
+                id = msg.author.id.as_u64().to_string();
+            }
+        }
+    }
+    else {
+        id = msg.author.id.as_u64().to_string();
+    }
 
-    let id: String = msg.author.id.as_u64().to_string();
+
     println!("id: {id}");
     let mut dcuser: DcUser = DcUser::new(id);
     dcuser.get_user_data_or_create_user(&pool).await;
@@ -1425,7 +1443,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("play <url>", "plays the audio from an url that leads to an audio file", false)
             .field("play2 <url>", "plays the audio from an url that leads to a youtube video", false)
             .field("ryndyndyn", "bad piggies theme song intensifies", false)
-            .field("moc", "returns your current power level", false)
+            .field("moc [@user]", "returns your or the person's specified current power lever", false)
             .field("huj", "pings a random member of the server", false)
             .field("russian_roulette", "you have a 1/6 chance to be muted for 24h, adds 25 power", false)
         )
