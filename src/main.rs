@@ -1314,26 +1314,28 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
     let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
     let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
     // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-    
+
     // let id: String = msg.author.id.as_u64().to_string();
-    let id:String;
-    
+    let id: String;
+    let przed: String;
+
     let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
     if words.len() > 0 {
         let userid = parse_username(words[0]);
         match userid {
             Some(uid) => {
-                id=uid.to_string(); 
-            },
+                id = uid.to_string();
+                przed = "ten użytkownik ma ".to_string();
+            }
             None => {
                 id = msg.author.id.as_u64().to_string();
+                przed = "masz ".to_string();
             }
         }
-    }
-    else {
+    } else {
         id = msg.author.id.as_u64().to_string();
+        przed = "masz ".to_string();
     }
-
 
     println!("id: {id}");
     let mut dcuser: DcUser = DcUser::new(id);
@@ -1341,7 +1343,7 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
 
     msg.reply(
         &ctx,
-        "masz ".to_string() + dcuser.power.to_string().as_str() + " milionów mocy",
+        przed + dcuser.power.to_string().as_str() + " milionów mocy",
     )
     .await?;
 
