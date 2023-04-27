@@ -1361,6 +1361,28 @@ async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
         .into_iter()
         .filter(|m| m.user.bot == false)
         .collect();
+
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    if words.len() > 0 {
+        let res = words[0].parse::<u8>();
+        match res {
+            Ok(mut n) => {
+                if n > 6 {
+                    n = 6;
+                }
+                for _ in 0..n {
+                    let num = rand::thread_rng().gen_range(0..members.len());
+                    msg.channel_id
+                        .send_message(&ctx, |m| {
+                            m.content(format!("<@{}>", members[num].user.id.as_u64()))
+                        })
+                        .await?;
+                }
+                return Ok(());
+            }
+            Err(_) => (),
+        }
+    }
     let num = rand::thread_rng().gen_range(0..members.len());
     msg.channel_id
         .send_message(&ctx, |m| {
@@ -1446,7 +1468,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("play2 <url>", "plays the audio from an url that leads to a youtube video", false)
             .field("ryndyndyn", "bad piggies theme song intensifies", false)
             .field("moc [@user]", "returns your or the person's specified current power lever", false)
-            .field("huj", "pings a random member of the server", false)
+            .field("huj [n]", "pings [n] number random members of the server n<=6", false)
             .field("russian_roulette", "you have a 1/6 chance to be muted for 24h, adds 25 power", false)
         )
     }).await?;
