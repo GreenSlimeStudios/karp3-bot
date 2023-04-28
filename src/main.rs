@@ -1396,6 +1396,35 @@ async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
 }
 #[command]
 async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
+    if !msg
+        .channel(&ctx)
+        .await
+        .unwrap()
+        .to_string()
+        .starts_with("<#")
+    {
+        msg.reply(&ctx, "you can only use that command in a server")
+            .await?;
+        return Ok(());
+    }
+
+    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    let pool = sqlx::postgres::PgPool::connect(url).await;
+    match pool {
+        Ok(pool) => {
+            let id: String = msg.author.id.as_u64().to_string();
+            let mut dcuser: DcUser = DcUser::new(id);
+            dcuser.get_user_data_or_create_user(&pool).await;
+
+            dcuser.power += 25;
+            dcuser.update_user(&pool).await;
+        }
+        Err(e) => {
+            msg.reply(&ctx, format!("error: {e}")).await?;
+            return Ok(());
+        }
+    }
+
     let members = msg
         .guild_id
         .unwrap()
@@ -1405,7 +1434,7 @@ async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
     let num = rand::thread_rng().gen_range(0..6) as u8;
 
     if num == 5 {
-        msg.reply(&ctx, "You hit the jackpot! <:bronnie:1088395064440533012>")
+        msg.reply(&ctx, "You hit the jackpot! 🔫 <:bronnie:1088395064440533012>")
             .await?;
 
         let now = Utc::now();
@@ -1421,17 +1450,7 @@ async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
         msg.reply(&ctx, "nothing happned...").await?;
     }
 
-    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-    let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
     // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
-    let id: String = msg.author.id.as_u64().to_string();
-    println!("id: {id}");
-    let mut dcuser: DcUser = DcUser::new(id);
-    dcuser.get_user_data_or_create_user(&pool).await;
-
-    dcuser.power += 25;
-    dcuser.update_user(&pool).await;
 
     Ok(())
 }
