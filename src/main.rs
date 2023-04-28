@@ -56,6 +56,7 @@ use user::DcUser;
     huj,
     russian_roulette,
     writein,
+    update_moc,
 )]
 struct General;
 
@@ -1434,8 +1435,11 @@ async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
     let num = rand::thread_rng().gen_range(0..6) as u8;
 
     if num == 5 {
-        msg.reply(&ctx, "You hit the jackpot! 🔫 <:bronnie:1088395064440533012>")
-            .await?;
+        msg.reply(
+            &ctx,
+            "You hit the jackpot! 🔫 <:bronnie:1088395064440533012>",
+        )
+        .await?;
 
         let now = Utc::now();
         let time: String = (now + Duration::hours(24)).to_rfc3339();
@@ -1498,6 +1502,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
 }
 #[command]
 async fn writein(ctx: &Context, msg: &Message) -> CommandResult {
+    // msg.reply(&ctx, &msg.content).await?;
     let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
     if words.len() > 1 {
         let channel = ChannelId(words[0].parse::<u64>().unwrap());
@@ -1507,6 +1512,33 @@ async fn writein(ctx: &Context, msg: &Message) -> CommandResult {
             mess += word;
         }
         channel.send_message(&ctx, |m| m.content(mess)).await?;
+    }
+
+    Ok(())
+}
+#[command]
+async fn update_moc(ctx: &Context, msg: &Message) -> CommandResult {
+    if *msg.author.id.as_u64() != 519553926958284800u64 {
+        return Ok(());
+    }
+    // msg.reply(&ctx, &msg.content).await?;
+    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    let pool = sqlx::postgres::PgPool::connect(url).await;
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    match pool {
+        Ok(pool) => {
+            let id: &str = words[0];
+            let moc: i64 = words[1].parse::<i64>().unwrap();
+            let mut dcuser: DcUser = DcUser::new(id.to_string());
+            dcuser.get_user_data_or_create_user(&pool).await;
+
+            dcuser.power += moc;
+            dcuser.update_user(&pool).await;
+        }
+        Err(e) => {
+            msg.reply(&ctx, format!("error: {e}")).await?;
+            return Ok(());
+        }
     }
 
     Ok(())
