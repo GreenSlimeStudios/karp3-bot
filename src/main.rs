@@ -20,6 +20,7 @@ use serenity::framework::standard::{Args, CommandResult, Delimiter, StandardFram
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
+use serenity::model::id::ChannelId;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
@@ -54,6 +55,7 @@ use user::DcUser;
     moc,
     huj,
     russian_roulette,
+    writein,
 )]
 struct General;
 
@@ -1472,6 +1474,21 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("russian_roulette", "you have a 1/6 chance to be muted for 24h, adds 25 power", false)
         )
     }).await?;
+
+    Ok(())
+}
+#[command]
+async fn writein(ctx: &Context, msg: &Message) -> CommandResult {
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    if words.len() > 1 {
+        let channel = ChannelId(words[0].parse::<u64>().unwrap());
+        let msg_words: Vec<&str> = words.into_iter().skip(1).collect();
+        let mut mess: String = "".to_string();
+        for word in msg_words {
+            mess += word;
+        }
+        channel.send_message(&ctx, |m| m.content(mess)).await?;
+    }
 
     Ok(())
 }
