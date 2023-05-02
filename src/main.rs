@@ -56,6 +56,7 @@ use user::DcUser;
     huj,
     russian_roulette,
     writein,
+    bet,
     update_moc,
 )]
 struct General;
@@ -222,7 +223,9 @@ impl EventHandler for Handler {
         let mut dcuser: DcUser = DcUser::new(id);
         dcuser.get_user_data_or_create_user(&pool).await;
 
-        dcuser.power += 1;
+        if !is_dm(&msg, &ctx).await {
+            dcuser.power += 1;
+        }
         dcuser.update_user(&pool).await;
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
@@ -1397,13 +1400,7 @@ async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
 }
 #[command]
 async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
-    if !msg
-        .channel(&ctx)
-        .await
-        .unwrap()
-        .to_string()
-        .starts_with("<#")
-    {
+    if is_dm(msg, ctx).await {
         msg.reply(&ctx, "you can only use that command in a server")
             .await?;
         return Ok(());
@@ -1495,6 +1492,7 @@ async fn help(ctx: &Context, msg: &Message) -> CommandResult {
             .field("moc [@user]", "returns your or the person's specified current power lever", false)
             .field("huj [n]", "pings [n] number random members of the server n<=6", false)
             .field("russian_roulette", "you have a 1/6 chance to be muted for 24h, adds 25 power", false)
+            .field("bet <power> <black/white>", "50/50 chance to gain/loose specified power", false)
         )
     }).await?;
 
@@ -1542,4 +1540,89 @@ async fn update_moc(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     Ok(())
+}
+#[command]
+async fn bet(ctx: &Context, msg: &Message) -> CommandResult {
+    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    let pool = sqlx::postgres::PgPool::connect(url).await;
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    match pool {
+        Ok(pool) => {
+            if words.len() < 2 {
+                msg.reply(&ctx, "missing argument").await?;
+                return Ok(());
+            }
+            let id: String = msg.author.id.to_string();
+            let moc: i64 = words[0].parse::<i64>().unwrap();
+            let color: &str = words[1];
+            let mut dcuser: DcUser = DcUser::new(id);
+            dcuser.get_user_data_or_create_user(&pool).await;
+
+            if moc > dcuser.power {
+                msg.reply(
+                    &ctx,
+                    format!(
+                        "You don't have that much power. Your current power is {}.",
+                        dcuser.moc()
+                    ),
+                )
+                .await?;
+                return Ok(());
+            }
+            let bet: u8 = match color {
+                "black" => 0,
+                "red" => 1,
+                _ => {
+                    msg.reply(&ctx, "invalid color").await?;
+                    return Ok(());
+                }
+            };
+            // msg.reply(&ctx, bet.to_string()).await?;
+            // println!("======{bet}=======");
+            let num = rand::thread_rng().gen_range(1..=5);
+            for _ in 0..num{
+                msg.channel_id.send_message(&ctx, |m|m.content("the ball is rolling...")).await?;
+                std::thread::sleep(std::time::Duration::from_millis(300));
+            }
+
+            if (rand::thread_rng().gen_range(0..=1) as u8) == 0 {
+                let add_msg:String;
+                if bet == 0 {
+                    dcuser.power += moc;
+                    add_msg=format!("You now have {} millionów mocy",dcuser.power);
+                } else {
+                    dcuser.power -= moc;
+                    add_msg=format!("You have lost {} millionów mocy",moc);
+                }
+                msg.reply(&ctx, "the BALL landed on BLACK. ".to_string() + add_msg.as_str()).await?;
+            } else {
+                let add_msg:String;
+                if bet == 1 {
+                    dcuser.power += moc;
+                    add_msg=format!("You now have {} millionów mocy",dcuser.power);
+                } else {
+                    dcuser.power -= moc;
+                    add_msg=format!("You have lost {} millionów mocy",moc);
+                }
+                msg.reply(&ctx, "the BALL landed on RED. ".to_string() + add_msg.as_str()).await?;
+            }
+
+            dcuser.update_user(&pool).await;
+        }
+        Err(e) => {
+            msg.reply(&ctx, format!("error: {e}")).await?;
+            return Ok(());
+        }
+    }
+
+    Ok(())
+}
+
+async fn is_dm(msg: &Message, ctx: &Context) -> bool {
+    return !msg
+        .channel(&ctx)
+        .await
+        .unwrap()
+        .to_string()
+        .starts_with("<#");
 }
