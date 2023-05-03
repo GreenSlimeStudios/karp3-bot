@@ -27,6 +27,7 @@ use serenity::prelude::*;
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 mod user;
+use sqlx::Row;
 use user::DcUser;
 
 #[group]
@@ -58,6 +59,7 @@ use user::DcUser;
     writein,
     bet,
     update_moc,
+    moce,
 )]
 struct General;
 
@@ -1354,6 +1356,66 @@ async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+#[command]
+async fn moce(ctx: &Context, msg: &Message) -> CommandResult {
+    let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
+    let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
+
+    let q = "SELECT * FROM db_users ORDER BY power DESC";
+    let query = sqlx::query(q);
+
+    let rows = query.fetch_all(&pool).await;
+    match rows {
+        Ok(r) => {
+            let mut mess: String = "".to_string();
+            for row in r {
+                let pow: i64 = row.get("power");
+                let id: String = row.get("id");
+                mess += format!("<@{}> - {}\n", id, pow).as_str();
+            }
+            msg.channel_id
+                .send_message(&ctx, |m| m.content(mess))
+                .await?;
+        }
+        Err(e) => {
+            // self.create_user(pool).await;
+            msg.reply(&ctx, e).await?;
+        }
+    }
+
+    let id: String;
+    let przed: String;
+
+    let words: Vec<&str> = msg.content.split(" ").skip(1).collect();
+    if words.len() > 0 {
+        let userid = parse_username(words[0]);
+        match userid {
+            Some(uid) => {
+                id = uid.to_string();
+                przed = "ten użytkownik ma ".to_string();
+            }
+            None => {
+                id = msg.author.id.as_u64().to_string();
+                przed = "masz ".to_string();
+            }
+        }
+    } else {
+        id = msg.author.id.as_u64().to_string();
+        przed = "masz ".to_string();
+    }
+
+    println!("id: {id}");
+    let mut dcuser: DcUser = DcUser::new(id);
+    dcuser.get_user_data_or_create_user(&pool).await;
+
+    msg.reply(
+        &ctx,
+        przed + dcuser.power.to_string().as_str() + " milionów mocy",
+    )
+    .await?;
+
+    Ok(())
+}
 
 #[command]
 async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
@@ -1516,6 +1578,8 @@ async fn writein(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn update_moc(ctx: &Context, msg: &Message) -> CommandResult {
     if *msg.author.id.as_u64() != 519553926958284800u64 {
+        msg.reply(&ctx, "You dont have permission to run this command")
+            .await?;
         return Ok(());
     }
     // msg.reply(&ctx, &msg.content).await?;
@@ -1579,31 +1643,41 @@ async fn bet(ctx: &Context, msg: &Message) -> CommandResult {
             // msg.reply(&ctx, bet.to_string()).await?;
             // println!("======{bet}=======");
             let num = rand::thread_rng().gen_range(1..=5);
-            for _ in 0..num{
-                msg.channel_id.send_message(&ctx, |m|m.content("the ball is rolling...")).await?;
+            for _ in 0..num {
+                msg.channel_id
+                    .send_message(&ctx, |m| m.content("the ball is rolling..."))
+                    .await?;
                 std::thread::sleep(std::time::Duration::from_millis(300));
             }
 
             if (rand::thread_rng().gen_range(0..=1) as u8) == 0 {
-                let add_msg:String;
+                let add_msg: String;
                 if bet == 0 {
                     dcuser.power += moc;
-                    add_msg=format!("You now have {} millionów mocy",dcuser.power);
+                    add_msg = format!("You now have {} millionów mocy", dcuser.power);
                 } else {
                     dcuser.power -= moc;
-                    add_msg=format!("You have lost {} millionów mocy",moc);
+                    add_msg = format!("You have lost {} millionów mocy", moc);
                 }
-                msg.reply(&ctx, "the BALL landed on BLACK. ".to_string() + add_msg.as_str()).await?;
+                msg.reply(
+                    &ctx,
+                    "the BALL landed on BLACK. ".to_string() + add_msg.as_str(),
+                )
+                .await?;
             } else {
-                let add_msg:String;
+                let add_msg: String;
                 if bet == 1 {
                     dcuser.power += moc;
-                    add_msg=format!("You now have {} millionów mocy",dcuser.power);
+                    add_msg = format!("You now have {} millionów mocy", dcuser.power);
                 } else {
                     dcuser.power -= moc;
-                    add_msg=format!("You have lost {} millionów mocy",moc);
+                    add_msg = format!("You have lost {} millionów mocy", moc);
                 }
-                msg.reply(&ctx, "the BALL landed on RED. ".to_string() + add_msg.as_str()).await?;
+                msg.reply(
+                    &ctx,
+                    "the BALL landed on RED. ".to_string() + add_msg.as_str(),
+                )
+                .await?;
             }
 
             dcuser.update_user(&pool).await;

@@ -11,7 +11,9 @@ pub struct DcUser {
 
 impl DcUser {
     pub fn new(id: String) -> Self {
-        Self { id, power: 0,
+        Self {
+            id,
+            power: 0,
             last_msg: chrono::Utc::now(),
         }
     }
@@ -19,11 +21,11 @@ impl DcUser {
     pub fn moc(&self) -> i64 {
         return self.power;
     }
-    pub async fn handle_passive_income(&mut self,pool: &sqlx::PgPool){
+    pub async fn handle_passive_income(&mut self, pool: &sqlx::PgPool) {
         let now = chrono::Utc::now();
-        if (now.time() - self.last_msg.time()).num_seconds() > 30{
+        if (now.time() - self.last_msg.time()).num_seconds() > 30 {
             self.last_msg = now;
-            self.power+=1;
+            self.power += 1;
         }
 
         self.update_user(pool).await;
@@ -38,7 +40,7 @@ impl DcUser {
             Some(v) => {
                 self.power = v.get("power");
                 self.last_msg = v.get("last_msg");
-                println!("========={}=======",self.last_msg);
+                println!("========={}=======", self.last_msg);
             }
             None => {
                 self.create_user(pool).await;
