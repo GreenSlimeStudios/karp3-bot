@@ -21,7 +21,7 @@ impl DcUser {
     }
     pub async fn handle_passive_income(&mut self,pool: &sqlx::PgPool){
         let now = chrono::Utc::now();
-        if (now.time() - self.last_msg.time()).num_seconds() > 10{
+        if (now.time() - self.last_msg.time()).num_seconds() > 30{
             self.last_msg = now;
             self.power+=1;
         }
