@@ -224,6 +224,7 @@ impl EventHandler for Handler {
         dcuser.get_user_data_or_create_user(&pool).await;
 
         if !is_dm(&msg, &ctx).await {
+            
             dcuser.power += 1;
         }
         dcuser.update_user(&pool).await;
@@ -1409,13 +1410,13 @@ async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
     let url = "postgres://dbuser:sprzedamopla@localhost:5432/postgres";
     let pool = sqlx::postgres::PgPool::connect(url).await;
     match pool {
-        Ok(pool) => {
+        Ok(p) => {
             let id: String = msg.author.id.as_u64().to_string();
             let mut dcuser: DcUser = DcUser::new(id);
-            dcuser.get_user_data_or_create_user(&pool).await;
+            dcuser.get_user_data_or_create_user(&p).await;
 
             dcuser.power += 25;
-            dcuser.update_user(&pool).await;
+            dcuser.update_user(&p).await;
         }
         Err(e) => {
             msg.reply(&ctx, format!("error: {e}")).await?;

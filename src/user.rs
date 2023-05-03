@@ -5,11 +5,15 @@ use sqlx::Row;
 pub struct DcUser {
     pub id: String,
     pub power: i64,
+    pub last_msg: chrono::DateTime<chrono::Utc>,
+    // pub last_msg: chrono::DateTime<chrono::Utc>,
 }
 
 impl DcUser {
     pub fn new(id: String) -> Self {
-        Self { id, power: 0 }
+        Self { id, power: 0,
+            last_msg: chrono::Utc::now(),
+        }
     }
 
     pub fn moc(&self) -> i64 {
@@ -24,6 +28,8 @@ impl DcUser {
         match row {
             Some(v) => {
                 self.power = v.get("power");
+                self.last_msg = v.get("last_msg");
+                println!("========={}=======",self.last_msg);
             }
             None => {
                 self.create_user(pool).await;
