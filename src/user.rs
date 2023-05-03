@@ -19,6 +19,15 @@ impl DcUser {
     pub fn moc(&self) -> i64 {
         return self.power;
     }
+    pub async fn handle_passive_income(&mut self,pool: &sqlx::PgPool){
+        let now = chrono::Utc::now();
+        if (now.time() - self.last_msg.time()).num_seconds() > 10{
+            self.last_msg = now;
+            self.power+=1;
+        }
+
+        self.update_user(pool).await;
+    }
 
     pub async fn get_user_data_or_create_user(&mut self, pool: &sqlx::PgPool) {
         let q = "SELECT * FROM db_users WHERE id = $1";
@@ -37,20 +46,22 @@ impl DcUser {
         }
     }
     pub async fn create_user(&self, pool: &sqlx::PgPool) {
-        let query = "INSERT INTO db_users (id, power) VALUES ($1, $2)";
+        let query = "INSERT INTO db_users (id, power,last_msg) VALUES ($1, $2, $3)";
         sqlx::query(query)
             .bind(&self.id)
             .bind(&self.power)
+            .bind(&self.last_msg)
             .execute(pool)
             .await
             .unwrap();
     }
     pub async fn update_user(&self, pool: &sqlx::PgPool) {
         // let query = "INSERT INTO dc_users (id, power) VALUES ($1, $2)";
-        let query = "UPDATE db_users SET power = $2 WHERE id = $1";
+        let query = "UPDATE db_users SET power = $2, last_msg = $3 WHERE id = $1";
         sqlx::query(query)
             .bind(&self.id)
             .bind(&self.power)
+            .bind(&self.last_msg)
             .execute(pool)
             .await
             .unwrap();

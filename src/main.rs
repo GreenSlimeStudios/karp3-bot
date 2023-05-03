@@ -224,10 +224,8 @@ impl EventHandler for Handler {
         dcuser.get_user_data_or_create_user(&pool).await;
 
         if !is_dm(&msg, &ctx).await {
-            
-            dcuser.power += 1;
+            dcuser.handle_passive_income(&pool).await;
         }
-        dcuser.update_user(&pool).await;
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("{} is connected!", _ready.user.name);
