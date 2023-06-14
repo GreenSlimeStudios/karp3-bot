@@ -4,7 +4,7 @@ mod lists;
 use lists::*;
 
 use async_recursion::async_recursion;
-use serenity::model::prelude::{ReactionType, UserId, Member};
+use serenity::model::prelude::{ReactionType, UserId};
 use serenity::utils::parse_username;
 use songbird::SerenityInit;
 use std::fs::OpenOptions;
@@ -21,18 +21,16 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
-use chrono::{Utc,Duration};
 
 use serpapi_search_rust::serp_api_search::SerpApiSearch;
 
 mod user;
-use user::DcUser;
+use user::DcUser::*;
 
 #[group]
 #[commands(
     ping,
     // dekarpdelaspecial,
-    help,
     meme,
     calculate,
     calculate27,
@@ -51,10 +49,7 @@ use user::DcUser;
     play2,
     stop,
     ryndyndyn,
-    is_deafned,
-    moc,
-    huj,
-    russian_roulette,
+    is_deafned
 )]
 struct General;
 
@@ -210,21 +205,6 @@ impl EventHandler for Handler {
                 }
             }
         }
-
-        
-        let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-        let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
-        let id:String = msg.author.id.as_u64().to_string();
-        println!("id: {id}");
-        let mut dcuser:DcUser = DcUser::new(id);
-        dcuser.get_user_data_or_create_user(&pool).await;
-        
-        dcuser.power += 1;
-        dcuser.update_user(&pool).await;
-
-
     }
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("{} is connected!", _ready.user.name);
@@ -283,11 +263,6 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-
-    // let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-    // let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-    // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
     tracing_subscriber::fmt::init();
     let framework = StandardFramework::default()
         .configure(|c| c.prefix("$")) // set the bot's prefix to "~"
@@ -460,7 +435,6 @@ async fn ksearch(ctx: &Context, msg: &Message) -> CommandResult {
 
     let results = search.json().await.unwrap();
     let organic_results: &Vec<serde_json::Value>;
-    
     match results["organic_results"].as_array() {
         Some(v) => {
             organic_results = v;
@@ -1309,103 +1283,11 @@ async fn is_deafned(ctx: &Context, msg: &Message) -> CommandResult {
         .expect("Songbird Voice client placed in at initialisation.")
         .clone();
     if let Some(handler_lock) = manager.get(msg.guild_id.unwrap()) {
-        let handler = handler_lock.lock().await;
+        let mut handler = handler_lock.lock().await;
         msg.reply(&ctx, handler.is_deaf()).await?;
     }
     Ok(())
 }
 
 
-#[command]
-async fn moc(ctx: &Context, msg: &Message) -> CommandResult {
-    let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-    let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
-    let id:String = msg.author.id.as_u64().to_string();
-    println!("id: {id}");
-    let mut dcuser:DcUser = DcUser::new(id);
-    dcuser.get_user_data_or_create_user(&pool).await;
-    
-    msg.reply(&ctx, "masz ".to_string()+dcuser.power.to_string().as_str()+ " milionów mocy").await?;
-    
-    Ok(())
-}
-
-#[command]
-async fn huj(ctx: &Context, msg: &Message) -> CommandResult {
-    let members:Vec<Member> = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap().into_iter().filter(|m|m.user.bot==false).collect();
-    let num = rand::thread_rng().gen_range(0..members.len());
-    msg.channel_id.send_message(&ctx, |m|{m.content(format!("<@{}>",members[num].user.id.as_u64()))}).await?;
-
-    Ok(())
-}
-#[command]
-async fn russian_roulette(ctx: &Context, msg: &Message) -> CommandResult {
-    let members = msg.guild_id.unwrap().members(&ctx, Some(1000), None).await.unwrap();
-    let num = rand::thread_rng().gen_range(0..6) as u8;
-    
-    if num == 5{
-        msg.reply(&ctx, "You hit the jackpot! <:bronnie:1088395064440533012>").await?;
-
-        let now = Utc::now();
-        let time: String = (now + Duration::hours(24)).to_rfc3339();
-        members.into_iter().find(|x|x.user.id.as_u64() == msg.author.id.as_u64()).unwrap().edit(&ctx, |m|{m.disable_communication_until(time)}).await?;
-        // msg.guild_id.unwrap().ban
-    }
-    else{
-        msg.reply(&ctx, "nothing happned...").await?;
-    }
-        let url="postgres://dbuser:sprzedamopla@localhost:5432/postgres";
-        let pool = sqlx::postgres::PgPool::connect(url).await.unwrap();
-        // sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
-        let id:String = msg.author.id.as_u64().to_string();
-        println!("id: {id}");
-        let mut dcuser:DcUser = DcUser::new(id);
-        dcuser.get_user_data_or_create_user(&pool).await;
-        
-        dcuser.power += 1;
-        dcuser.update_user(&pool).await;
-
-
-    Ok(())
-}
-
-
-#[command]
-async fn help(ctx: &Context, msg: &Message) -> CommandResult {
-    let url = UserId(1020723547875840030).to_user(&ctx).await.unwrap().avatar_url().unwrap();
-    msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| e
-            .colour(0x00ff00)
-            // .thumbnail(profile.avatar.clone())
-            .thumbnail(url)
-            .url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-            .title(format!("Help from glorious karp"))
-            .field("ping", "check if karp is alive", false)
-            .field("help", "displays this command", false)
-            .field("calculate <expression>", "calculates de thing in decimal values. Put space between every character exept for numbers", false)
-            .field("calculate27 <expression>", "calculates de thing in bongal values. Put space between every character exept for numbers", false)
-            .field("calculate_verbose <expression>", "same as calculate command but documents every step of the process", false)
-            .field("bongal <decimal>", "converts decimal value into bongal value", false)
-            .field("decimal <bongal>", "converts bongal value into decimal value", false)
-            .field("tr [@user]", "returns the profile picture of you or the person specified", false)
-            .field("ksearch <result count> <query>", "searches the web", false)
-            .field("jumpscare", "jumpscare", false)
-            .field("dm <@user> <message>", "sends an annonymous message to the person specified", false)
-            .field("activity", "returns the activities of people in the server", false)
-            .field("join", "joins the vc channel you are in", false)
-            .field("leave", "leaves all vc channels on the server", false)
-            .field("stop", "stops playing any current audio", false)
-            .field("play <url>", "plays the audio from an url that leads to an audio file", false)
-            .field("play2 <url>", "plays the audio from an url that leads to a youtube video", false)
-            .field("ryndyndyn", "bad piggies theme song intensifies", false)
-            .field("moc", "returns your current power level", false)
-            .field("huj", "pings a random member of the server", false)
-            .field("russian_roulette", "you have a 1/6 chance to be muted for 24h", false)
-        )
-    }).await?;
-
-    Ok(())
-}

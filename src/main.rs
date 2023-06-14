@@ -384,7 +384,23 @@ async fn aaa(ctx: &Context, msg: &Message) -> CommandResult {
 }
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong!").await?;
+    let mess = msg
+        .channel_id
+        .send_message(&ctx, |m| {
+            m.embed(|e| e.title("Pong").description("Pong"))
+                .components(|c| {
+                    c.create_action_row(|row| row.create_button(|cb| cb.label("Pong").custom_id(1)))
+                })
+        })
+        .await?;
+    let i = mess.await_component_interaction(&ctx).await;
+    match i {
+        Some(v) => {
+            println!("{:?}", v.data.custom_id);
+        }
+        None => (),
+    }
+    msg.reply(&ctx, "pong!").await?;
 
     Ok(())
 }
@@ -1371,7 +1387,7 @@ async fn moce(ctx: &Context, msg: &Message) -> CommandResult {
             for row in r {
                 let pow: i64 = row.get("power");
                 let id: String = row.get("id");
-                mess += format!("<@{}> - {}\n", id, pow).as_str();
+                mess += format!("<@{}>  {}\n", id, pow).as_str();
             }
             msg.channel_id
                 .send_message(&ctx, |m| m.content(mess))
@@ -1621,7 +1637,16 @@ async fn bet(ctx: &Context, msg: &Message) -> CommandResult {
             let mut dcuser: DcUser = DcUser::new(id);
             dcuser.get_user_data_or_create_user(&pool).await;
 
-            if moc > dcuser.power {
+            if moc < 1{
+                msg.reply(
+                    &ctx,
+                        "Bruh.",
+                )
+                .await?;
+                return Ok(());
+            }
+
+            if moc > dcuser.power{
                 msg.reply(
                     &ctx,
                     format!(
